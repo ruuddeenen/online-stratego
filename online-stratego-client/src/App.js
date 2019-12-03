@@ -1,7 +1,9 @@
 import React from 'react';
-import './App.css';
+import './css/App.css';
+import './css/bootstrap.css'
+import './css/bootstrap-grid.css'
 import { BrowserRouter, Route } from 'react-router-dom';
-import {Game} from './pages/game.js'
+import Game from './pages/Game'
 
 function App() {
   return (
