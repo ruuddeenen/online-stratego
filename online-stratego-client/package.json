@@ -4,7 +4,9 @@
   "private": true,
   "dependencies": {
     "@stomp/stompjs": "^5.4.2",
+    "node-sass": "^4.13.0",
     "react": "^16.12.0",
+    "react-bootstrap": "^1.0.0-beta.16",
     "react-cursor-position": "^3.0.3",
     "react-dom": "^16.12.0",
     "react-router-dom": "^5.1.2",
@@ -13,7 +15,7 @@
     "sockjs-client": "^1.4.0"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "cross-env PORT=3010 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -32,5 +34,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "cross-env": "^6.0.3"
   }
 }

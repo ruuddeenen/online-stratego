@@ -2,10 +2,12 @@ package service.responses;
 
 import models.Pawn.Pawn;
 import models.Player;
+import service.Operation;
 
 import java.util.ArrayList;
 
 public class ConnectResponse {
+    private Operation operation;
     private ArrayList<Player> playerList;
     private boolean[][] field;
     private Pawn[][] pawns;

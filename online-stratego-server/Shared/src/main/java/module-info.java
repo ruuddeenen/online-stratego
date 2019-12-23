@@ -1,0 +1,3 @@
+module Shared {
+    exports responses;
+}

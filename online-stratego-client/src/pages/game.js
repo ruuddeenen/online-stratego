@@ -2,7 +2,11 @@ import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
 
-const height = 800, width = 1000;
+const canvasDimensions = {
+    height: 800,
+    width: 1000
+};
+
 let stompClient = null;
 
 class Game extends Component {
@@ -58,17 +62,22 @@ class Game extends Component {
 
         const board = this.state.board;
         const size = board.length;
-            for (var y = 0; y < size; y++) {
-                const field = board[y];
-                for (var x = 0; x < size; x++) {
-                    if (field[x] === true) {
-                        context.fillStyle = 'green';
-                    } else if (field[x] === false) {
-                        context.fillStyle = 'blue';
-                    }
-                    context.fillRect((width / size) * x, (height / size) * y, width / size - 1, height / size - 1);
+        for (var y = 0; y < size; y++) {
+            const field = board[y];
+            for (var x = 0; x < size; x++) {
+                if (field[x] === true) {
+                    context.fillStyle = 'green';
+                } else if (field[x] === false) {
+                    context.fillStyle = 'blue';
                 }
+                context.fillRect(
+                    (canvasDimensions.width / size) * x,
+                    (canvasDimensions.height / size) * y,
+                    canvasDimensions.width / size - 1,
+                    canvasDimensions.height / size - 1
+                );
             }
+        }
 
     }
 
@@ -76,12 +85,12 @@ class Game extends Component {
         console.log('draw pawns');
     }
 
-    handleMessage(message) {
-        const obj = JSON.parse(message.body);
+    handleMessage(msg) {
+        const message = JSON.parse(msg.body);
         this.setState({
-            board: obj.field
+            board: message.field
         });
-        console.log(obj, 'OUTPUT');
+        console.log(message, 'OUTPUT');
     }
 
     sendMessage = (endPoint, message) => {
@@ -90,7 +99,10 @@ class Game extends Component {
     }
 
     toggle = () => {
-        this.sendMessage('/app/game', { id: 0, username: 'ruudTest' });
+        this.sendMessage('/app/game', {
+            id: 0,
+            username: 'ruudTest'
+        });
     }
 
     handleMouseClick(e) {
@@ -118,10 +130,10 @@ class Game extends Component {
                 <div className='row' id='center'>
                     <div className='grid'>
                         <div className='canvasWrapper'>
-                            <canvas id='canvasBoard' width={width} height={height} onMouseDown={this.handleMouseClick.bind(this)} />
+                            <canvas id='canvasBoard' width={canvasDimensions.width} height={canvasDimensions.height} onMouseDown={this.handleMouseClick.bind(this)} />
                         </div>
                         <div className='canvasWrapper'>
-                            <canvas id='canvasPawns' width={width} height={height} onMouseDown={this.handleMouseClick.bind(this)} />
+                            <canvas id='canvasPawns' width={canvasDimensions.width} height={canvasDimensions.height} onMouseDown={this.handleMouseClick.bind(this)} />
                         </div>
                     </div>
                 </div>
