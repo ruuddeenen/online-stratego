@@ -9,6 +9,10 @@ public class UserResponse {
         this.username = username;
     }
 
+    public UserResponse(){
+        this("null", "null");
+    }
+
     public String getUsername() {
         return username;
     }

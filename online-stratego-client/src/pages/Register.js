@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { Form } from 'react-bootstrap';
 import Button from 'react-bootstrap/Button';
-
-const restUrl = 'http://localhost:9000';
+import { createUrlToRestApi } from '../scripts/restHandler';
 
 class Register extends Component {
 
@@ -37,37 +36,36 @@ class Register extends Component {
     }
 
     handleLogin() {
-        let url = [];
-        url.push(
-            restUrl,
-            '/login?',
-            'username=',
-            this.state.username,
-            '&password=',
-            this.state.password
-        );
-        url = url.join('');
-        console.log(url);
-
-        fetch(url)
-            .then(res => res.json)
-            .then((data) => {
-                this.setState({
-                    user: data
-                }, () => {
-                    console.log(this.state.user, 'user');
-                    if (this.state.user.id !== null) {
-                        localStorage.setItem('user', this.state.user);
-                        //window.location = '/lobby';
-                    } else {
-                        window.alert('Could not find account with those credentials!');
-                    }
-                })
-            })
+        window.location = '/';
     }
 
     handleRegister() {
-        window.location = '/register';
+        const username = this.state.username;
+        const password = this.state.password;
+        const passwordConfirmation = this.state.passwordConfirmation;
+        
+        if (password !== passwordConfirmation){
+            window.alert('Passwords do not match.');
+            return;
+        }
+
+        if (username === 'null') {
+            window.alert('Username cannot be null.');
+            return;
+        }
+
+        const url = createUrlToRestApi('register', ['username', 'password'], [username, password]);
+
+        fetch(url)
+            .then(res => res.json())
+            .then((data) => {
+                console.log(data, 'data');
+                if (data.id !== 'null' || data.username !== 'null') {
+                    window.location = '/';
+                } else {
+                    window.alert('Could not create account! Unkown error.');
+                }
+            });
     }
 
     handleChangeUsername(e) {
@@ -108,12 +106,11 @@ class Register extends Component {
                     <Form.Group>
                         <Form.Control className='input' type='text' id='username' placeholder='Username' onChange={this.handleChangeUsername} />
                     </Form.Group>
-
                     <Form.Group>
-                        <Form.Control className='input' type='password' id='password' placeholder='Password' onChange={this.handleChangePassword} />
+                        <Form.Control className='input' type='password' id='password' placeholder='Password' autoComplete='new-password' onChange={this.handleChangePassword} />
                     </Form.Group>
                     <Form.Group>
-                        <Form.Control className='input' type='password' id='passwordConf' placeholder='Confirm password' onChange={this.handleChangePasswordConf} />
+                        <Form.Control className='input' type='password' id='passwordConf' placeholder='Confirm password' autoComplete='new-password' onChange={this.handleChangePasswordConf} />
                     </Form.Group>
                     <Form.Group>
                         <Button className='btn btn-warning' onClick={this.handleRegister} >

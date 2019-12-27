@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
+import { GameConnectMessage } from '../models/MessageModels';
 
 const canvasDimensions = {
     height: 800,
@@ -13,6 +14,9 @@ class Game extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            user: null,
+            lobbyId: null,
+            color: null,
             mouseX: 0,
             mouseY: 0,
             ready: false,
@@ -22,11 +26,14 @@ class Game extends Component {
 
         // Bindings
         this.sendMessage = this.sendMessage.bind(this);
-        this.handleMessage = this.handleMessage.bind(this);
+        this.onMessageRecieved = this.onMessageRecieved.bind(this);
         this.toggle = this.toggle.bind(this);
     }
 
     componentDidMount() {
+        this.getSessionStorage();
+        this.getUser();
+        this.getLobbyId();
         this.connect();
         this.drawBoard();
     }
@@ -41,16 +48,40 @@ class Game extends Component {
         console.log(this.state);
     }
 
+    getSessionStorage() {
+        this.setState({
+            user: JSON.parse(sessionStorage.getItem('user')),
+            lobbyId: sessionStorage.getItem('lobbyId'),
+            color: sessionStorage.getItem('color')
+        });
+    }
+    getUser() {
+        this.setState({
+            user: JSON.parse(sessionStorage.getItem('user'))
+        });
+    }
+
+    getLobbyId() {
+        this.setState({
+            lobbyId: sessionStorage.getItem('lobbyId')
+        });
+    }
+
     connect = () => {
-        let _this = this;
+        const _this = this;
         const socket = new SockJS('http://localhost:9000/ws');
         stompClient = Stomp.Stomp.over(socket);
         stompClient.connect({}, function (frame) {
             console.log(frame.toString());
             stompClient.subscribe('/topic/game', (message) => {
-                _this.handleMessage(message);
+                _this.onMessageRecieved(message);
             });
-            _this.sendMessage('/app/game', { id: 0, username: 'ruudTest' });
+            _this.sendMessage('/app/game', new GameConnectMessage(
+                _this.state.user.id,
+                _this.state.user.username,
+                _this.state.lobbyId,
+                _this.state.color
+            ))
         });
     }
 
@@ -85,12 +116,20 @@ class Game extends Component {
         console.log('draw pawns');
     }
 
-    handleMessage(msg) {
+
+
+    onMessageRecieved(msg) {
         const message = JSON.parse(msg.body);
-        this.setState({
-            board: message.field
-        });
-        console.log(message, 'OUTPUT');
+        console.log(message, 'recieved');
+
+        if (message.operation === 'START_GAME') {
+            if (message.lobbyId === this.state.lobbyId && message.receiver === this.state.user.id){
+                this.setState({
+                    board: message.fields,
+                    pawns: message.pawnList
+                });
+            }
+        }
     }
 
     sendMessage = (endPoint, message) => {

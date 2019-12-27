@@ -2,68 +2,95 @@ package service.controllers.websocket;
 
 import com.google.gson.Gson;
 import models.Player;
+import models.enums.Color;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import service.Operation;
-import service.ResponseMessage;
+import service.messages.LobbyResponseMessage;
+import service.messages.ResponseMessage;
 import service.messages.ConnectMessage;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 public class LobbyController {
-    Gson gson = new Gson();
+    private Gson gson = new Gson();
     private static Map<String, List<Player>> lobbyPlayerMap = new HashMap<>();
+    private static Set<Player> playerSet = new HashSet<>();
 
     @MessageMapping("/lobby")
     @SendTo("/topic/lobby")
     public ResponseMessage connect(ConnectMessage message) {
-        Player player = new Player(message.getId(), message.getUsername());
-        List<Player> players = getPlayerListFromLobbyId(message.getLobbyId());
+        Player player = getPlayerById(message.getId(), message.getUsername());
 
-        if (message.getLobbyId() == null) {                 // If no such lobby exists, create new and add player
-            return createNewLobbyAndAddPlayer(player);
-        } else if (players.contains(player)) {              // If player is already in lobby
+        List<Player> playersInLobby = getPlayerListFromLobbyId(message.getLobbyId());
+
+        if (playersInLobby.contains(player)) {                      // If player is already in lobby
             return playerAlreadyInLobby(message.getLobbyId());
-        } else if (players.size() < 2) {                    // If player can be added to lobby
-            return addPlayerToLobby(players, player, message.getLobbyId());
-        } else                                              // If lobby is full
-            return new ResponseMessage(null, null, null, null);
+        } else if (message.getLobbyId().length() != 5) {
+            return createNewLobbyAndAddPlayer(player);
+        } else if (playersInLobby.size() < 2) {                     // If player can be added to lobby
+            return addPlayerToLobby(playersInLobby, player, message.getLobbyId());
+        } else                                                      // If lobby is full
+            return new ResponseMessage();
     }
+
+
+    private Player getPlayerById(String id, String username) {
+        for (Player p : playerSet
+        ) {
+            if (p.getId().equals(id)) {
+                return p;
+            }
+        }
+        Player p = new Player(id, username);
+        playerSet.add(p);
+        return p;
+    }
+
 
     private ResponseMessage playerAlreadyInLobby(String lobbyId) {
-        return new ResponseMessage(Operation.JOINED_LOBBY, null, lobbyId, gson.toJson(lobbyPlayerMap.get(lobbyId)));
+        return new LobbyResponseMessage(Operation.JOINED_LOBBY, null, lobbyId, lobbyPlayerMap.get(lobbyId));
     }
 
-    private List<Player> getPlayerListFromLobbyId(String lobbyId){
-        return lobbyPlayerMap.get(lobbyId);
+    private List<Player> getPlayerListFromLobbyId(String lobbyId) {
+        List<Player> players = lobbyPlayerMap.get(lobbyId);
+        if (players == null) {
+            return new ArrayList<>();
+        }
+        return players;
     }
 
     private ResponseMessage createNewLobbyAndAddPlayer(Player player) {
-        String lobbyId = RandomStringUtils.randomAlphabetic(5);
+        String lobbyId = RandomStringUtils.randomAlphanumeric(5);
         List<Player> players = new ArrayList<>();
         players.add(player);
         lobbyPlayerMap.put(lobbyId, players);
-        return new ResponseMessage(
+        return new LobbyResponseMessage(
                 Operation.JOINED_LOBBY,
-                "from",
+                player.getId(),
                 lobbyId,
-                gson.toJson(players)
+                players
         );
     }
 
     private ResponseMessage addPlayerToLobby(List<Player> players, Player player, String lobbyId) {
         players.add(player);
         lobbyPlayerMap.put(lobbyId, players);
-        return new ResponseMessage(
+
+        if (players.size() == 2) {
+            Collections.shuffle(players);
+            players.get(0).setColor(Color.RED);
+            players.get(1).setColor(Color.BLUE);
+        }
+
+        return new LobbyResponseMessage(
                 Operation.JOINED_LOBBY,
-                null,
+                player.getId(),
                 lobbyId,
-                gson.toJson(players));
+                players
+        );
     }
 }

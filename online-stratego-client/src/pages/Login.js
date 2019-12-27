@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { Form } from 'react-bootstrap';
 import Button from 'react-bootstrap/Button';
-
-const restUrl = 'http://localhost:9000';
+import { createUrlToRestApi } from '../scripts/restHandler';
 
 class Login extends Component {
 
@@ -21,6 +20,10 @@ class Login extends Component {
         this.handleChangePassword = this.handleChangePassword.bind(this);
     }
 
+    componentDidMount(){
+        sessionStorage.setItem('lobbyId', '');
+    }
+
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevState !== this.state) {
             console.log(this.state);
@@ -35,33 +38,31 @@ class Login extends Component {
     }
 
     handleLogin() {
-        let url = [];
-        url.push(
-            restUrl,
-            '/login?',
-            'username=',
-            this.state.username,
-            '&password=',
-            this.state.password
-        );
-        url = url.join('');
-        console.log(url);
+        const username = this.state.username;
+        const password = this.state.password;
+        const url = createUrlToRestApi('login', ['username', 'password'], [username, password]);
 
         fetch(url)
-            .then(res => res.json)
+            .then(res => res.json())
             .then((data) => {
                 this.setState({
                     user: data
-                }, () => {
-                    console.log(this.state.user, 'user');
-                    if (this.state.user.id !== null){
-                        localStorage.setItem('user', this.state.user);
-                        //window.location = '/lobby';
-                    } else {
-                        window.alert('Could not find account with those credentials!');
-                    }
-                })
-            })
+                },
+                    () => {
+                        console.log(this.state.user, 'user');
+                        if (this.state.user.id) {
+                            if (this.state.user.id !== 'null') {
+                                console.log(this.state)
+                                sessionStorage.setItem('user', JSON.stringify(this.state.user));
+                                window.location = '/joinlobby';
+                            } else {
+                                window.alert('Could not find account with those credentials!');
+                            }
+                        } else {
+                            window.alert('Could not fetch user!');
+                        }
+                    })
+            });
     }
 
     handleRegister() {
@@ -89,10 +90,10 @@ class Login extends Component {
 
                 <Form className='Form' style={{ backgroundColor: 'rgba(235,200,70,0.9)' }}>
                     <Form.Group>
-                        <Form.Control className='input' type='text' id='username' placeholder='Username' onChange={this.handleChangeUsername} />
+                        <Form.Control className='input' type='text' id='username' placeholder='Username' autoComplete='username' onChange={this.handleChangeUsername} />
                     </Form.Group>
                     <Form.Group>
-                        <Form.Control className='input' type='password' id='password' placeholder='Password' onChange={this.handleChangePassword} />
+                        <Form.Control className='input' type='password' id='password' placeholder='Password' autoComplete='current-password' onChange={this.handleChangePassword} />
                     </Form.Group>
                     <Form.Group>
                         <Button className='btn btn-warning' onClick={this.handleLogin} >

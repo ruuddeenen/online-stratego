@@ -1,16 +1,19 @@
 package models;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Game {
     private Board board;
-    private Player[] players;
-    private String code;
+    private Set<Player> playerSet;
 
-    public Game(Player p1, Player p2) {
-        this.code = RandomStringUtils.random(5, true, true);
+    public Game() {
         this.board = new Board();
-        this.players = new Player[]{p1, p2};
+        this.playerSet = new HashSet<>();
+    }
+
+    public void addPlayer(Player player) {
+        playerSet.add(player);
     }
 
 }

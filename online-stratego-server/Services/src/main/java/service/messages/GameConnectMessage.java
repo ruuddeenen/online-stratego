@@ -1,9 +1,20 @@
 package service.messages;
 
-public class ConnectMessage implements IConnectMessage {
+import models.enums.Color;
+
+public class GameConnectMessage implements IConnectMessage {
     private String id;
     private String username;
     private String lobbyId;
+    private Color color;
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
 
     public String getLobbyId() {
         return lobbyId;
@@ -28,5 +39,4 @@ public class ConnectMessage implements IConnectMessage {
     public String getUsername() {
         return username;
     }
-
 }
