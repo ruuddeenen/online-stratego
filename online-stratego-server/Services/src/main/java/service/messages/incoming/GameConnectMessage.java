@@ -2,7 +2,7 @@ package service.messages;
 
 import models.enums.Color;
 
-public class GameConnectMessage implements IConnectMessage {
+public class GameConnectMessage extends ConnectMessage {
     private String id;
     private String username;
     private String lobbyId;
