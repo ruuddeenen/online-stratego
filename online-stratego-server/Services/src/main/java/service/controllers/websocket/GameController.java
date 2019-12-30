@@ -25,7 +25,17 @@ public class GameController {
     @MessageMapping("/game")
     @SendTo("/topic/game")
     public ResponseMessage connect(GameConnectMessage message) throws Exception {
-        Player player = getPlayerById(message.getId(), message.getUsername(), message.getColor());
+        // Player player = getPlayerById(message.getId(), message.getUsername(), message.getColor());
+        List<Player> players = LobbyController.getPlayersByLobbyId(message.getLobbyId());
+        Player player = null, opponent = null;
+        for (Player p : players
+             ) {
+            if (p.getId().equals(message.getId())){
+                player = p;
+            } else {
+                opponent = p;
+            }
+        }
 
         Game game = gameMap.get(message.getLobbyId());
         if (game == null) {
@@ -34,9 +44,11 @@ public class GameController {
         }
         game.addPlayer(player);
 
+        assert player != null;
         return new GameStartResponseMessage(
                 Operation.START_GAME,
                 player.getId(),
+                opponent,
                 message.getLobbyId(),
                 getStandardPawns(player.getColor()),
                 STANDARD_FIELD

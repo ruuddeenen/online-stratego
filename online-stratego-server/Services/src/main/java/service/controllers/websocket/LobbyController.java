@@ -19,6 +19,10 @@ public class LobbyController {
     private static Map<String, List<Player>> lobbyPlayerMap = new HashMap<>();
     private static Set<Player> playerSet = new HashSet<>();
 
+    public static List<Player> getPlayersByLobbyId(String lobbyId){
+        return lobbyPlayerMap.get(lobbyId);
+    }
+
 
     @MessageMapping("/lobby/startgame")
     @SendTo("/topic/lobby")

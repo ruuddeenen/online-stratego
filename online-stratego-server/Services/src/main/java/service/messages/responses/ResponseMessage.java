@@ -8,9 +8,9 @@ public class ResponseMessage implements IResponse {
     private String receiver;
     private String lobbyId;
 
-    public ResponseMessage(Operation operation, String sender, String lobbyId) {
+    public ResponseMessage(Operation operation, String receiver, String lobbyId) {
         this.operation = operation;
-        this.receiver = sender;
+        this.receiver = receiver;
         this.lobbyId = lobbyId;
     }
 

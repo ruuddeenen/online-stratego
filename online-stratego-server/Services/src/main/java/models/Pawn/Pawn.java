@@ -14,8 +14,9 @@ public abstract class Pawn {
     public Pawn(int rank, Color color) {
         this.rank = rank;
         this.color = color;
-        this.name = getClass().getCanonicalName();
+        this.name = getClass().getSimpleName();
         this.revealed = false;
+        this.position = new Position(-1, -1);
     }
 
     public void move(Position position) {
@@ -53,5 +54,33 @@ public abstract class Pawn {
             return (position.getY() == newPosition.getY() - 1 || position.getY() == newPosition.getY() + 1);
         }
         return false;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public void setRevealed(boolean revealed) {
+        this.revealed = revealed;
     }
 }
