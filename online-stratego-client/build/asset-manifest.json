@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/static/css/main.2b1e9cb3.chunk.css",
+    "main.js": "/static/js/main.d53dad9b.chunk.js",
+    "main.js.map": "/static/js/main.d53dad9b.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.7d04a3fa.js",
+    "runtime-main.js.map": "/static/js/runtime-main.7d04a3fa.js.map",
+    "static/js/2.fdea70c4.chunk.js": "/static/js/2.fdea70c4.chunk.js",
+    "static/js/2.fdea70c4.chunk.js.map": "/static/js/2.fdea70c4.chunk.js.map",
+    "index.html": "/index.html",
+    "precache-manifest.8dd8f1931f276d605ceebfb833d0fd4a.js": "/precache-manifest.8dd8f1931f276d605ceebfb833d0fd4a.js",
+    "service-worker.js": "/service-worker.js",
+    "static/css/main.2b1e9cb3.chunk.css.map": "/static/css/main.2b1e9cb3.chunk.css.map",
+    "static/media/index.css": "/static/media/KochFraktur.90b12954.ttf",
+    "static/media/App.css": "/static/media/background.821300b0.jpg"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.7d04a3fa.js",
+    "static/js/2.fdea70c4.chunk.js",
+    "static/css/main.2b1e9cb3.chunk.css",
+    "static/js/main.d53dad9b.chunk.js"
+  ]
+}

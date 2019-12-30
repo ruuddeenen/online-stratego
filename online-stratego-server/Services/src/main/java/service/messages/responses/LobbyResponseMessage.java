@@ -1,7 +1,8 @@
-package service.messages;
+package service.messages.responses;
 
 import models.Player;
 import service.Operation;
+import service.messages.responses.ResponseMessage;
 
 import java.util.List;
 

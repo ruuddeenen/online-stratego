@@ -1,4 +1,4 @@
-package service.messages;
+package service.messages.incoming;
 
 import models.enums.Color;
 

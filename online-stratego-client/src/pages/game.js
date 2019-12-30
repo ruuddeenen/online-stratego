@@ -122,8 +122,8 @@ class Game extends Component {
         const message = JSON.parse(msg.body);
         console.log(message, 'recieved');
 
-        if (message.operation === 'START_GAME') {
-            if (message.lobbyId === this.state.lobbyId && message.receiver === this.state.user.id){
+        if (message.lobbyId === this.state.lobbyId) {
+            if (message.operation === 'START_GAME') {
                 this.setState({
                     board: message.fields,
                     pawns: message.pawnList

@@ -1,4 +1,4 @@
-package service.messages;
+package service.messages.interfaces;
 
 import service.Operation;
 

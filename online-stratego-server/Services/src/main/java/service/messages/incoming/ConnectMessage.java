@@ -1,4 +1,6 @@
-package service.messages;
+package service.messages.incoming;
+
+import service.messages.interfaces.IConnectMessage;
 
 public class ConnectMessage implements IConnectMessage {
     private String id;

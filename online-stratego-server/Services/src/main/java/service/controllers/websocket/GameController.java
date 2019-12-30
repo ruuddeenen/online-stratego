@@ -10,9 +10,9 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import service.Operation;
-import service.messages.GameConnectMessage;
-import service.messages.ResponseMessage;
-import service.messages.StartGameResponseMessage;
+import service.messages.incoming.GameConnectMessage;
+import service.messages.responses.ResponseMessage;
+import service.messages.responses.GameStartResponseMessage;
 
 import java.util.*;
 
@@ -34,7 +34,7 @@ public class GameController {
         }
         game.addPlayer(player);
 
-        return new StartGameResponseMessage(
+        return new GameStartResponseMessage(
                 Operation.START_GAME,
                 player.getId(),
                 message.getLobbyId(),

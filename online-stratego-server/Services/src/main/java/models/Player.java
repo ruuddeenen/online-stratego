@@ -11,6 +11,10 @@ public class Player {
     private Color color;
     private List<Pawn> defeatedPawns;
 
+    public Player(){
+
+    }
+
     public Player(String id, String username){
         this.id = id;
         this.username = username;

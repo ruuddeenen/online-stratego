@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
 import { Button } from 'react-bootstrap';
-import { ConnectMessage } from '../models/MessageModels';
+import { ConnectMessage, GameStartMessage } from '../models/MessageModels';
 
 let stompClient = null;
 
@@ -15,17 +15,10 @@ class Lobby extends Component {
             user: null,
             lobbyId: null,
             playerList: [],
-            info1: {
-                username: 'Player 1',
-                won: '0',
-                lost: '0'
-            },
-            info2: {
-                username: 'Waiting for player..',
-                won: '',
-                lost: ''
-            }
+            buttonDisabled: true
         }
+
+        // Bindings
         this.onMessageRecieved = this.onMessageRecieved.bind(this);
         this.sendMessage = this.sendMessage.bind(this);
     }
@@ -35,35 +28,14 @@ class Lobby extends Component {
         this.connect();
     }
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+    }
+
     getSessionStorage() {
         this.setState({
             user: JSON.parse(sessionStorage.getItem('user')),
             lobbyId: sessionStorage.getItem('lobbyId')
         });
-    }
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        console.log(this.state);
-
-        if (this.state.user !== prevState.user) {
-            const info = {
-                username: this.state.user.username,
-                won: 6,
-                lost: 9
-            };
-
-            this.setState({
-                info1: info
-            });
-        }
-
-        if (this.state.playerList.length === 2 && this.state.playerList !== prevState.playerList) {
-            const playerList = this.state.playerList;
-            this.setState({
-                info1: this.createInfoBlockFromPlayer(playerList[0]),
-                info2: this.createInfoBlockFromPlayer(playerList[1])
-            });
-        }
     }
 
     connect() {
@@ -88,34 +60,82 @@ class Lobby extends Component {
         const message = JSON.parse(msg.body);
         console.log(message, 'recieved');
 
-        console.log(this.state)
-        if (message.operation === 'JOINED_LOBBY') {
-            this.setState({
-                lobbyId: message.lobbyId,
-                playerList: message.playerList
-            });
+        if (message.receiver === this.state.user.id) {
+            if (message.operation === 'NEW_LOBBY') {
+                this.setState({
+                    lobbyId: message.lobbyId,
+                    playerList: message.playerList
+                });
 
-            sessionStorage.setItem('lobbyId', this.state.lobbyId);
-            this.state.playerList.forEach(player => {
-                if (player.id === this.state.user.id) {
-                    sessionStorage.setItem('color', player.color);
+                sessionStorage.setItem('lobbyId', this.state.lobbyId);
+            }
+        }
+
+        if (message.lobbyId === this.state.lobbyId) {
+            if (message.operation === 'JOINED_LOBBY') {
+                this.setState({
+                    playerList: message.playerList
+                });
+
+                this.state.playerList.forEach(player => {
+                    if (player.id === this.state.user.id) {
+                        sessionStorage.setItem('color', player.color);
+                    }
+                });
+                if (this.state.playerList.size === 2){
+                    this.setState({
+                        buttonDisabled: false
+                    })
                 }
-            });
+            } else if (message.operation === 'START_GAME') {
+                window.location = '/game';
+            }
         }
     }
 
-    sendMessage(endPoint, message) {
+    sendMessage = (endPoint, message) => {
         stompClient.send(endPoint, {}, JSON.stringify(message));
         console.log(message, 'SEND');
     }
 
-    getPlayer(i) {
-        const player = this.state.playerList[i];
-        console.log(player, 'player ' + i);
+    startGame = () => {
+        if (this.state.playerList.length !== 2){
+            window.alert('2 Players are needed for a game!');
+            return;
+        }
+        console.log('start game', this);
+        this.sendMessage('/app/lobby/startgame', new GameStartMessage(
+            this.state.lobbyId,
+            this.state.playerList
+        ));
     }
 
-    startGame() {
-        window.location = '/game';
+
+
+    render() {
+        return (
+            <div className='Layout'>
+                <div className='row'>
+                    <header className='Header'>Lobby:&nbsp;</header>
+                    <header className='lobby-id'>{this.state.lobbyId && this.state.lobbyId}</header>
+                </div>
+                <div className='container' style={{ width: '60%' }}>
+                    <div className='row'>
+                        <div className='col-sm'>
+                            {this.createInfoBlockFromPlayer(0)}
+                        </div>
+                        <div className='col-sm'>
+                            {this.createInfoBlockFromPlayer(1)}
+                        </div>
+                    </div>
+                    <div className='row' style={{ paddingTop: '1rem' }}>
+                        <Button className='btn btn-warning' onClick={this.startGame}>
+                            Start Game
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
 
@@ -143,32 +163,6 @@ class Lobby extends Component {
                 </div>
             )
         }
-    }
-
-    render() {
-        return (
-            <div className='Layout'>
-                <div className='row'>
-                    <header className='Header'>Lobby:&nbsp;</header>
-                    <header className='lobby-id'>{this.state.lobbyId && this.state.lobbyId}</header>
-                </div>
-                <div className='container' style={{ width: '60%' }}>
-                    <div className='row'>
-                        <div className='col-sm'>
-                            {this.createInfoBlockFromPlayer(0)}
-                        </div>
-                        <div className='col-sm'>
-                            {this.createInfoBlockFromPlayer(1)}
-                        </div>
-                    </div>
-                    <div className='row' style={{ paddingTop: '1rem' }}>
-                        <Button className='btn btn-warning' onClick={this.startGame}>
-                            Start Game
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )
     }
 }
 export default Lobby;

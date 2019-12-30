@@ -1,6 +1,7 @@
-package service.messages;
+package service.messages.responses;
 
 import service.Operation;
+import service.messages.interfaces.IResponse;
 
 public class ResponseMessage implements IResponse {
     private Operation operation;

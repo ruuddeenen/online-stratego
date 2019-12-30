@@ -1,6 +1,7 @@
-package service.messages;
+package service.messages.incoming;
 
 import models.Player;
+import service.messages.interfaces.IGameMessage;
 
 import java.util.List;
 

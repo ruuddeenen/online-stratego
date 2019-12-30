@@ -60,6 +60,10 @@
   margin: 0;
 }
 
+.upper-case {
+  text-transform: uppercase;
+}
+
 .Form {
   font-family: Arial;
   font-size: xxx-large;
