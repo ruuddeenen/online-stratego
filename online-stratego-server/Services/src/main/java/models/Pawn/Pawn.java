@@ -35,7 +35,7 @@ public abstract class Pawn {
         return revealed;
     }
 
-    int getRank() {
+    public int getRank() {
         return rank;
     }
 

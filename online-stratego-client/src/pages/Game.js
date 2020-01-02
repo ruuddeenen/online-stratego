@@ -2,8 +2,6 @@ import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
 import { GameConnectMessage } from '../models/MessageModels';
-import Grass from '../images/grass.png';
-import Water from '../images/water.png';
 import Bomb from '../images/pawns/stratego-bomb.webp';
 import Captain from '../images/pawns/stratego-captain.webp';
 import Colonel from '../images/pawns/stratego-colonel.webp';
@@ -16,8 +14,8 @@ import Miner from '../images/pawns/stratego-miner.webp';
 import Scout from '../images/pawns/stratego-scout.webp';
 import Sergeant from '../images/pawns/stratego-sergeant.webp';
 import Spy from '../images/pawns/stratego-spy.webp';
-import Cross from '../images/cross.webp';
 import { Button } from 'react-bootstrap';
+import { CanvasHandler } from '../scripts/CanvasHandler';
 
 const canvasDimensions = {
     height: {
@@ -33,6 +31,7 @@ const canvasDimensions = {
 };
 
 let stompClient = null;
+let canvasHandler = null;
 
 class Game extends Component {
     constructor(props) {
@@ -46,7 +45,6 @@ class Game extends Component {
             board: [],
             pawns: [],
             selectedItem: null,
-            images: [],
             pawnsLeftToPlace: []
         };
 
@@ -56,45 +54,11 @@ class Game extends Component {
     }
 
     componentDidMount() {
-        const images = {
-            pawns: {
-                sergeant: createImage(Sergeant),
-                bomb: createImage(Bomb),
-                captain: createImage(Captain),
-                colonel: createImage(Colonel),
-                flag: createImage(Flag),
-                general: createImage(General),
-                lieutenant: createImage(Lieutenant),
-                major: createImage(Major),
-                marshal: createImage(Marshal),
-                miner: createImage(Miner),
-                scout: createImage(Scout),
-                spy: createImage(Spy)
-            },
-            grass: createImage(Grass),
-            water: createImage(Water),
-            cross: createImage(Cross),
-        };
-
-        const pawnsLeftToPlace = {
-            sergeant: 0,
-            bomb: 0,
-            captain: 0,
-            colonel: 0,
-            flag: 0,
-            general: 0,
-            lieutenant: 0,
-            major: 0,
-            marshal: 0,
-            miner: 0,
-            scout: 0,
-            spy: 0
-        }
-
-        this.setState({
-            images: images,
-            pawnsLeftToPlace: pawnsLeftToPlace
-        });
+        canvasHandler = new CanvasHandler(
+            document.getElementById('canvasBoard'),
+            document.getElementById('canvasPawns'),
+            document.getElementById('canvasOverlay')
+        );
 
         function createImage(url) {
             let image = new Image();
@@ -106,42 +70,34 @@ class Game extends Component {
         this.getUser();
         this.getLobbyId();
         this.connect();
-        this.drawBoard();
-        this.drawPawns();
+
+        canvasHandler.drawPawns(this.state.pawns);
+
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (this.state.images) {
             if (this.state.board !== prevState.board) {
-                this.drawBoard();
+                canvasHandler.setBoard(this.state.board);
+                canvasHandler.drawStrategoBoard(this.state.color, this.state.opponent.color);
             }
             if (this.state.pawns !== prevState.pawns) {
-                this.drawPawns();
+                this.setState({
+                    pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
+                });
             }
-        }
         console.log(this.state, 'state update');
     }
 
-    updatePawnsLeftToPlace() {
-        const pawns = this.state.pawns;
-        let pawnsLeftToPlace = {
-            sergeant: this.getPawnsToPlace(pawns, this.getNameFromImport(Sergeant)),
-            bomb: this.getPawnsToPlace(pawns, this.getNameFromImport(Bomb)),
-            captain: this.getPawnsToPlace(pawns, this.getNameFromImport(Captain)),
-            colonel: this.getPawnsToPlace(pawns, this.getNameFromImport(Colonel)),
-            flag: this.getPawnsToPlace(pawns, this.getNameFromImport(Flag)),
-            general: this.getPawnsToPlace(pawns, this.getNameFromImport(General)),
-            lieutenant: this.getPawnsToPlace(pawns, this.getNameFromImport(Lieutenant)),
-            major: this.getPawnsToPlace(pawns, this.getNameFromImport(Major)),
-            marshal: this.getPawnsToPlace(pawns, this.getNameFromImport(Marshal)),
-            miner: this.getPawnsToPlace(pawns, this.getNameFromImport(Miner)),
-            scout: this.getPawnsToPlace(pawns, this.getNameFromImport(Scout)),
-            spy: this.getPawnsToPlace(pawns, this.getNameFromImport(Spy))
-        };
-
-        this.setState({
-            pawnsLeftToPlace: pawnsLeftToPlace
-        });
+    getPawnCountLeftToPlace(pawnArray, name) {
+        let count = 0;
+        for (let i = 0; i < pawnArray.length; i++) {
+            if (pawnArray[i].name === name) {
+                if (pawnArray[i].position.x === -1 || pawnArray[i].position.y === -1) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     getPawnsToPlace(pawnArray, name) {
@@ -193,102 +149,6 @@ class Game extends Component {
         });
     }
 
-    drawBoard() {
-        const canvas = document.getElementById('canvasBoard');
-        const context = canvas.getContext('2d');
-        const board = this.state.board;
-        const size = board.length;
-        const width = canvas.width, height = canvas.height;
-
-        context.fillStyle = 'black';
-        context.fillRect(0, 0, width, height);
-        for (var y = 0; y < size; y++) {
-            const field = board[y];
-            for (var x = 0; x < size; x++) {
-                let image;
-                if (field[x] === true) {
-                    image = this.state.images.grass;
-                } else if (field[x] === false) {
-                    image = this.state.images.water;
-                }
-
-                context.drawImage(
-                    image,
-                    (width / size) * x + 1,
-                    (height / size) * y + 1,
-                    width / size - 1,
-                    height / size - 1
-                );
-
-                // Draw colored overlay
-                if (y < 4) {
-                    context.fillStyle = this.state.opponent.color;
-                    context.globalAlpha = 0.4;
-                    context.fillRect(
-                        (width / size) * x,
-                        (height / size) * y,
-                        width / size,
-                        height / size
-                    )
-                }
-                else if (y > 5) {
-                    context.fillStyle = this.state.color;
-                    context.globalAlpha = 0.4;
-                    context.fillRect(
-                        (width / size) * x,
-                        (height / size) * y,
-                        width / size,
-                        height / size
-                    )
-                }
-                context.globalAlpha = 1.0;
-            }
-        }
-
-        // Draw border
-        context.beginPath();
-        context.moveTo(0, 0);
-        context.lineTo(0, height);
-        context.lineTo(width, height);
-        context.lineTo(width, 0);
-        context.lineTo(0, 0);
-        context.stroke();
-    }
-
-    drawPawns() {
-        const canvas = document.getElementById('canvasPawns');
-        const context = canvas.getContext('2d');
-        const board = this.state.board;
-        const size = board.length;
-        const width = canvas.width, height = canvas.height;
-        const pawns = this.state.pawns;
-
-        context.clearRect(0, 0, width, height);
-
-        for (let i = 0; i < pawns.length; i++) {
-            const position = pawns[i].position;
-            if (position.x !== -1 || position.y !== -1) {
-                console.log('drawing',
-                    this.getPawnFromArray(pawns[i].name, this.state.images.pawns),
-                    (width / size) * position.x,
-                    (height / size) * position.y,
-                    width / size,
-                    height / size);
-
-                context.drawImage(
-                    this.getPawnFromArray(pawns[i].name, this.state.images.pawns),
-                    (width / size) * position.x + 5,
-                    (height / size) * position.y + 5,
-                    width / size - 10,
-                    height / size - 10
-                )
-            }
-        }
-        this.updatePawnsLeftToPlace();
-    }
-
-
-
     onMessageRecieved(msg) {
         const message = JSON.parse(msg.body);
         console.log(message, 'recieved');
@@ -296,6 +156,8 @@ class Game extends Component {
         if (message.lobbyId === this.state.lobbyId) {
             if (message.receiver === this.state.user.id) {
                 if (message.operation === 'START_GAME') {
+                    console.log(
+                        message.pawnList);
                     this.setState({
                         board: message.fields,
                         pawns: message.pawnList,
@@ -311,24 +173,6 @@ class Game extends Component {
         console.log(message, 'SEND');
     }
 
-    drawCrossAtPosition(x, y) {
-        const canvas = document.getElementById('canvasCross');
-        const context = canvas.getContext('2d');
-        const width = canvas.width, height = canvas.height;
-        const size = this.state.board.length;
-        context.clearRect(0, 0, width, height);
-
-        if (this.getPawnOnPosition(x, y) !== null) {
-            context.drawImage(
-                this.state.images.cross,
-                (width / size) * x + 5,
-                (height / size) * y + 5,
-                width / size - 10,
-                height / size - 10
-            )
-        }
-    }
-
     getPawnOnPosition(x, y) {
         const pawns = this.state.pawns;
         for (let i = 0; i < pawns.length; i++) {
@@ -342,7 +186,9 @@ class Game extends Component {
     handleMouseMove(e) {
         const x = Math.floor(e.nativeEvent.layerX / e.target.width * 10);
         const y = Math.floor(e.nativeEvent.layerY / e.target.height * 10);
-        this.drawCrossAtPosition(x, y);
+        if (this.getPawnOnPosition(x, y) !== null) {
+            canvasHandler.drawCrossAtPosition(x, y);
+        }
     }
 
     handleMouseClick(e) {
@@ -357,17 +203,23 @@ class Game extends Component {
             } else {
                 this.removePawn(selectedPawn);
             }
-            this.drawPawns();
+            canvasHandler.drawPawns(this.state.pawns);
+
+            this.setState({
+                pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
+            });
         }
 
+    }
+
+    handleMouseOut(e){
+        this.selectPawn('');
     }
 
     removePawn(pawn) {
         pawn.position.x = -1;
         pawn.position.y = -1;
-        this.setState({
-            selectedItem: ''
-        });
+        this.selectPawn('')
     }
 
     placePawn(pawnList, selectedName, x, y) {
@@ -386,16 +238,62 @@ class Game extends Component {
         });
     }
 
-    getBG(imageUrl) {
-        return 'url(' + imageUrl + ')';
+    getBG(name) {
+        switch (name) {
+            case 'Flag': return url(Flag);
+            case 'Spy': return url(Spy);
+            case 'Scout': return url(Scout);
+            case 'Miner': return url(Miner);
+            case 'Sergeant': return url(Sergeant);
+            case 'Lieutenant': return url(Lieutenant);
+            case 'Captain': return url(Captain);
+            case 'Major': return url(Major);
+            case 'Colonel': return url(Colonel);
+            case 'General': return url(General);
+            case 'Marshal': return url(Marshal);
+            case 'Bomb': return url(Bomb);
+        }
+
+        function url(imageUrl) {
+            return 'url(' + imageUrl + ')';
+        }
     }
 
     selectPawn(selectedItem) {
-        console.log(selectedItem, 'selected');
         this.setState({
             selectedItem: selectedItem
         });
     }
+    
+
+    getPawnByRank(rank, array) {
+        for (let l = 0; l < array.length; l++) {
+            if (array[l].rank === rank) {
+                return array[l];
+            }
+        }
+    }
+
+
+
+    getPawnsLeftToPlace(pawnArray) {
+        return [
+            this.getPawnCountLeftToPlace(pawnArray, 'Flag'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Spy'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Scout'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Miner'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Sergeant'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Lieutenant'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Captain'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Major'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Colonel'),
+            this.getPawnCountLeftToPlace(pawnArray, 'General'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Marshal'),
+            this.getPawnCountLeftToPlace(pawnArray, 'Bomb')
+        ];
+    }
+
+    // RENDER FUNCTIONS
 
     render() {
         return (
@@ -403,23 +301,40 @@ class Game extends Component {
                 {this.getHeader()}
                 <div className='row'>
                     <div id='left' className='col-md'>
-                        {this.createPawnButtons([Flag, Spy, Scout, Miner, Sergeant, Lieutenant, Captain, Major, Colonel, General, Marshal, Bomb])}
+                        {this.createButtons(this.state.pawns)}
                     </div>
-                    <div className='center' className='col-md'>
+                    <div className='center col-md'>
                         <div className='grid'>
                             <div className='canvasWrapper'>
-                                <canvas id='canvasBoard' width={canvasDimensions.width.medium} height={canvasDimensions.height.medium} onMouseDown={this.handleMouseClick.bind(this)} />
+                                <canvas
+                                    id='canvasBoard'
+                                    width={canvasDimensions.width.medium}
+                                    height={canvasDimensions.height.medium}
+                                    onMouseDown={this.handleMouseClick.bind(this)} />
                             </div>
                             <div className='canvasWrapper'>
-                                <canvas id='canvasPawns' width={canvasDimensions.width.medium} height={canvasDimensions.height.medium} onMouseDown={this.handleMouseClick.bind(this)} />
+                                <canvas
+                                    id='canvasPawns'
+                                    width={canvasDimensions.width.medium}
+                                    height={canvasDimensions.height.medium}
+                                    onMouseDown={this.handleMouseClick.bind(this)} />
                             </div>
                             <div className='canvasWrapper'>
-                                <canvas id='canvasCross' width={canvasDimensions.width.medium} height={canvasDimensions.height.medium} onMouseMove={this.handleMouseMove.bind(this)} onMouseDown={this.handleMouseClick.bind(this)} />
+                                <canvas
+                                    id='canvasOverlay'
+                                    width={canvasDimensions.width.medium}
+                                    height={canvasDimensions.height.medium}
+                                    onMouseMove={this.handleMouseMove.bind(this)}
+                                    onMouseDown={this.handleMouseClick.bind(this)}
+                                    onMouseOut={this.handleMouseOut.bind(this)}/>
                             </div>
                         </div>
                     </div>
                     <div id='right' className='col-sm'>
-                        <canvas id='canvasDefeatedPawns' width={canvasDimensions.width.small} height={canvasDimensions.height.medium}></canvas>
+                        <canvas id='canvasDefeatedPawns'
+                            width={canvasDimensions.width.small}
+                            height={canvasDimensions.height.medium}>
+                        </canvas>
                     </div>
                 </div>
             </div >
@@ -428,23 +343,13 @@ class Game extends Component {
 
     getHeader() {
         if (this.state.opponent) {
-            if (this.state.color === 'RED') {
-                return (
-                    <div className='row'>
-                        <header className='Header red'>{this.state.user.username}</header>
-                        <header className='Header'>&nbsp;-&nbsp;</header>
-                        <header className='Header blue'>{this.state.opponent.username}</header>
-                    </div>
-                )
-            } else {
-                return (
-                    <div className='row'>
-                        <header className='Header blue'>{this.state.user.username}</header>
-                        <header className='Header'>&nbsp;-&nbsp;</header>
-                        <header className='Header red'>{this.state.opponent.username}</header>
-                    </div>
-                )
-            }
+            return (
+                <div className='row'>
+                    <header className={this.state.color + ' Header'}>{this.state.user.username}</header>
+                    <header className='Header'>&nbsp;-&nbsp;</header>
+                    <header className={this.state.opponent.color + ' Header'}>{this.state.opponent.username}</header>
+                </div>
+            )
         } else {
             return (
                 <header className='Header'>
@@ -454,61 +359,33 @@ class Game extends Component {
         }
     }
 
-    createPawnButtons(pawns) {
+    createButtons = (pawnArray) => {
+        if (pawnArray.length === 0) {
+            return;
+        }
+
         let rows = [];
-        let i = 0;
-        for (let row = 0; row < pawns.length / 2; row++) {
-            rows.push(
-                <div className='row' key={i}>
-                    <div className='col-sm'>
+        let rank = 0;
+        for (let row = 0; row < 12 / 2; row++) {
+            let buttons = [];
+            for (let i = 0; i < 2; i++) {
+                const name = this.getPawnByRank(rank, pawnArray).name;
+                buttons.push(
+                    <div className='col-sm' key={i}>
                         <Button
-                            className={this.state.selectedItem === this.getNameFromImport(pawns[i]) ? 'btn-warning pawn active' : 'btn-warning pawn'}
-                            style={{ backgroundImage: this.getBG(pawns[i]) }}
-                            title={this.getNameFromImport(pawns[i])}
+                            className={this.state.selectedItem === name ? 'btn-warning pawn focus' : 'btn-warning pawn'}
+                            style={{ backgroundImage: this.getBG(name) }}
+                            title={name}
                             onClick={e => this.selectPawn(e.target.title)}>
-                            {this.getPawnFromArray(this.getNameFromImport(pawns[i++]), this.state.pawnsLeftToPlace)}
+                            {this.state.pawnsLeftToPlace[rank]}
                         </Button>
                     </div>
-                    <div className='col-sm'>
-                        <Button
-                            className={this.state.selectedItem === this.getNameFromImport(pawns[i]) ? 'btn-warning pawn active' : 'btn-warning pawn'}
-                            style={{ backgroundImage: this.getBG(pawns[i]) }}
-                            title={this.getNameFromImport(pawns[i])}
-                            onClick={e => this.selectPawn(e.target.title)}>
-                            {this.getPawnFromArray(this.getNameFromImport(pawns[i++]), this.state.pawnsLeftToPlace)}
-                        </Button>
-                    </div>
-                </div>);
+                );
+                rank++;
+            }
+            rows.push(<div className='row' key={row}>{buttons}</div>)
         }
         return rows;
-    }
-
-    getNameFromImport(item) {
-        const start = item.indexOf('stratego-') + 9;
-        const end = item.indexOf('.');
-        item = item.slice(start, end);
-        item = item.replace(item[0], item[0].toUpperCase());
-        return item;
-    }
-
-
-
-    getPawnFromArray(name, pawnArray) {
-        switch (name) {
-            case 'Flag': return pawnArray.flag;
-            case 'Spy': return pawnArray.spy;
-            case 'Scout': return pawnArray.scout;
-            case 'Miner': return pawnArray.miner;
-            case 'Sergeant': return pawnArray.sergeant;
-            case 'Marshal': return pawnArray.marshal;
-            case 'Major': return pawnArray.major;
-            case 'Lieutenant': return pawnArray.lieutenant;
-            case 'General': return pawnArray.general;
-            case 'Colonel': return pawnArray.colonel;
-            case 'Captain': return pawnArray.captain;
-            case 'Bomb': return pawnArray.bomb;
-            default: return name + ' did not match any pawn.'
-        }
     }
 }
 
