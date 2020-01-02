@@ -4,6 +4,7 @@ import connection.ConnectionManager;
 import interfaces.IUserRepository;
 import responses.UserResponse;
 
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,6 +50,7 @@ public class UserRepository implements IUserRepository {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println("Is VPN turned on?");
         }
         return null;
     }
