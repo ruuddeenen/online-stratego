@@ -1,36 +1,107 @@
 package service.controllers.websocket;
 
-import com.google.gson.Gson;
-import models.Game;
+import models.*;
 import models.Pawn.*;
-import models.PawnFactory;
-import models.Player;
-import models.enums.Color;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 import service.Operation;
 import service.messages.incoming.GameConnectMessage;
-import service.messages.responses.ResponseMessage;
-import service.messages.responses.GameStartResponseMessage;
+import service.messages.incoming.GetAvailableMovesMessage;
+import service.messages.incoming.MoveMessage;
+import service.messages.incoming.ReadyUpMessage;
+import service.messages.responses.*;
 
 import java.util.*;
 
 @Controller
 public class GameController {
-    private Gson gson = new Gson();
     private static Map<String, Game> gameMap = new HashMap<>();
     private static Set<Player> playerSet = new HashSet<>();
+    private static SimpMessageSendingOperations messagingTemplate;
+
+    @Autowired
+    public GameController(SimpMessageSendingOperations messagingTemplate) {
+        GameController.messagingTemplate = messagingTemplate;
+    }
+
+    @MessageMapping("/game/move")
+    @SendTo("/topic/game")
+    public Response move(MoveMessage message){
+        String lobbyId = message.getLobbyId();
+        Game game = gameMap.get(lobbyId);
+        Pawn pawn = message.getPawn();
+        Position oldPosition = pawn.getPosition();
+        boolean success = game.getBoard().movePawn(message.getPawn(), message.getPosition());
+        Position newPosition = pawn.getPosition();
+        if (success){
+            return new MoveResponse(
+                    Operation.MOVE_PAWN,
+                    message.getId(),
+                    message.getLobbyId(),
+                    oldPosition,
+                    newPosition
+            );
+        } else {
+            return new ErrorResponse("Not a valid move!");
+        }
+    }
+
+
+    @MessageMapping("/game/moves")
+    @SendTo("/topic/game")
+    public Response getMoves(GetAvailableMovesMessage message) {
+        String lobbyId = message.getLobbyId();
+        Pawn pawn = message.getPawn();
+        Game game = gameMap.get(lobbyId);
+
+        return new AvailableMovesResponse(
+                Operation.POSSIBLE_MOVES,
+                message.getId(),
+                message.getLobbyId(),
+                game.getBoard().getPossibleMoves(pawn)
+        );
+    }
+
+
+    @MessageMapping("/game/ready")
+    @SendTo("/topic/game")
+    public void readyUp(ReadyUpMessage message) {
+        String lobbyId = message.getLobbyId();
+        Game game = gameMap.get(lobbyId);
+        Player player = getPlayerById(message.getId());
+        assert player != null;
+        models.enums.Color color = player.getColor();
+
+        List<Pawn> pawnList = message.getPawnList();
+        game.addPawns(pawnList, color);
+
+        if (game.isReady()) {
+            for (Player p : game.getPlayerSet()
+            ) {
+                GameResponse responseMessage = new GameResponse(
+                        Operation.START_GAME,
+                        p.getId(),
+                        lobbyId,
+                        game.getBoard().getPawnsForPlayer(p),
+                        game.getTurn()
+                );
+                messagingTemplate.convertAndSend("/topic/game", responseMessage);
+            }
+        }
+    }
 
     @MessageMapping("/game")
     @SendTo("/topic/game")
-    public ResponseMessage connect(GameConnectMessage message) throws Exception {
-        // Player player = getPlayerById(message.getId(), message.getUsername(), message.getColor());
+    public Response connect(GameConnectMessage message) {
+        playerSet.add(new Player(message.getId(), message.getUsername(), message.getColor()));
         List<Player> players = LobbyController.getPlayersByLobbyId(message.getLobbyId());
         Player player = null, opponent = null;
         for (Player p : players
-             ) {
-            if (p.getId().equals(message.getId())){
+        ) {
+            if (p.getId().equals(message.getId())) {
                 player = p;
             } else {
                 opponent = p;
@@ -45,60 +116,25 @@ public class GameController {
         game.addPlayer(player);
 
         assert player != null;
-        return new GameStartResponseMessage(
-                Operation.START_GAME,
+        return new GameStartResponse(
+                Operation.START_PREP,
                 player.getId(),
                 opponent,
                 message.getLobbyId(),
-                getStandardPawns(player.getColor()),
+                Board.getStandardPawns(player.getColor()),
                 STANDARD_FIELD
 
         );
     }
 
-    private Player getPlayerById(String id, String username, Color color) {
+    private Player getPlayerById(String id) {
         for (Player p : playerSet
         ) {
             if (p.getId().equals(id)) {
                 return p;
             }
         }
-        Player p = new Player(id, username, color);
-        playerSet.add(p);
-        return p;
-    }
-
-    private List<Pawn> getStandardPawns(Color color) {
-        PawnFactory factory = new PawnFactory(color);
-        List<Pawn> pawns = new ArrayList<>();
-        for (int i = 0; i < 40; i++) {
-            if (i < 6) {
-                pawns.add(factory.getPawn("BOMB"));        // 6
-            } else if (i < 7) {
-                pawns.add(factory.getPawn("MARSHAL"));     // 1
-            } else if (i < 8) {
-                pawns.add(factory.getPawn("GENERAL"));     // 1
-            } else if (i < 10) {
-                pawns.add(factory.getPawn("COLONEL"));     // 2
-            } else if (i < 13) {
-                pawns.add(factory.getPawn("MAJOR"));       // 3
-            } else if (i < 17) {
-                pawns.add(factory.getPawn("CAPTAIN"));     // 4
-            } else if (i < 21) {
-                pawns.add(factory.getPawn("LIEUTENANT"));  // 4
-            } else if (i < 25) {
-                pawns.add(factory.getPawn("SERGEANT"));    // 4
-            } else if (i < 30) {
-                pawns.add(factory.getPawn("MINER"));       // 5
-            } else if (i < 38) {
-                pawns.add(factory.getPawn("SCOUT"));       // 8
-            } else if (i < 39) {
-                pawns.add(factory.getPawn("SPY"));         // 1
-            } else {
-                pawns.add(factory.getPawn("FLAG"));        // 1
-            }
-        }
-        return pawns;
+        return null;
     }
 
 

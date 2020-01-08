@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Form } from 'react-bootstrap';
 import Button from 'react-bootstrap/Button';
-import { createUrlToRestApi } from '../scripts/restHandler';
+import { createUrlToRestApi } from '../scripts/RestHandler';
 
 class Login extends Component {
 

@@ -1,9 +1,17 @@
 package models.Pawn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.enums.Color;
 
 public class UnknownPawn extends Pawn {
-    public UnknownPawn(Color color) {
-        super(0, color);
+    @JsonCreator
+    public UnknownPawn(@JsonProperty("color") Color color) {
+        super(-1, color);
+    }
+
+    public UnknownPawn(Pawn pawn) {
+        super(-1, pawn.getColor());
+        this.position = pawn.getPosition();
     }
 }

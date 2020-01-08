@@ -1,15 +1,15 @@
 package service.controllers.websocket;
 
 import models.Player;
-import models.enums.Color;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import service.Operation;
 import service.messages.incoming.GameStartMessage;
-import service.messages.responses.LobbyResponseMessage;
-import service.messages.responses.ResponseMessage;
+import service.messages.responses.ErrorResponse;
+import service.messages.responses.LobbyResponse;
+import service.messages.responses.Response;
 import service.messages.incoming.ConnectMessage;
 
 import java.util.*;
@@ -19,25 +19,25 @@ public class LobbyController {
     private static Map<String, List<Player>> lobbyPlayerMap = new HashMap<>();
     private static Set<Player> playerSet = new HashSet<>();
 
-    public static List<Player> getPlayersByLobbyId(String lobbyId){
+    static List<Player> getPlayersByLobbyId(String lobbyId){
         return lobbyPlayerMap.get(lobbyId);
     }
 
 
     @MessageMapping("/lobby/startgame")
     @SendTo("/topic/lobby")
-    public ResponseMessage startGame(GameStartMessage message) {
-        return new ResponseMessage(
-                Operation.START_GAME,
+    public Response startGame(GameStartMessage message) {
+        return new LobbyResponse(
+                Operation.OPEN_GAME,
                 null,
-                message.getLobbyId()
+                message.getLobbyId(),
+                message.getPlayerList()
         );
     }
 
-
     @MessageMapping("/lobby")
     @SendTo("/topic/lobby")
-    public ResponseMessage connect(ConnectMessage message) {
+    public Response connect(ConnectMessage message) {
         if (message.getLobbyId().isBlank()) {        // New lobby
             Player player = getPlayerById(message.getId(), message.getUsername());
             player.setColor(null);
@@ -48,8 +48,7 @@ public class LobbyController {
     }
 
 
-    private ResponseMessage joinLobby(ConnectMessage message) {
-        // Get player from message
+    private Response joinLobby(ConnectMessage message) {
         Player player = getPlayerById(message.getId(), message.getUsername());
 
         List<Player> playersInLobby = getPlayerListFromLobbyId(message.getLobbyId());
@@ -59,7 +58,7 @@ public class LobbyController {
         } else if (playersInLobby.size() < 2) {                     // If player can be added to lobby
             return addPlayerToLobby(playersInLobby, player, message.getLobbyId());
         } else                                                      // If lobby is full
-            return new ResponseMessage();
+            return new ErrorResponse("Lobby is full! Could not join");
     }
 
 
@@ -76,8 +75,8 @@ public class LobbyController {
     }
 
 
-    private ResponseMessage playerAlreadyInLobby(Player player, String lobbyId) {
-        return new LobbyResponseMessage(Operation.JOINED_LOBBY, player.getId(), lobbyId, lobbyPlayerMap.get(lobbyId));
+    private Response playerAlreadyInLobby(Player player, String lobbyId) {
+        return new LobbyResponse(Operation.JOINED_LOBBY, player.getId(), lobbyId, lobbyPlayerMap.get(lobbyId));
     }
 
     private List<Player> getPlayerListFromLobbyId(String lobbyId) {
@@ -88,12 +87,12 @@ public class LobbyController {
         return players;
     }
 
-    private ResponseMessage createNewLobbyAndAddPlayer(Player player) {
+    private Response createNewLobbyAndAddPlayer(Player player) {
         String lobbyId = RandomStringUtils.randomAlphanumeric(5).toUpperCase();
         List<Player> players = new ArrayList<>();
         players.add(player);
         lobbyPlayerMap.put(lobbyId, players);
-        return new LobbyResponseMessage(
+        return new LobbyResponse(
                 Operation.NEW_LOBBY,
                 player.getId(),
                 lobbyId,
@@ -101,17 +100,17 @@ public class LobbyController {
         );
     }
 
-    private ResponseMessage addPlayerToLobby(List<Player> players, Player player, String lobbyId) {
+    private Response addPlayerToLobby(List<Player> players, Player player, String lobbyId) {
         players.add(player);
         lobbyPlayerMap.put(lobbyId, players);
 
         if (players.size() == 2) {
             Collections.shuffle(players);
-            players.get(0).setColor(Color.RED);
-            players.get(1).setColor(Color.BLUE);
+            players.get(0).setColor(models.enums.Color.RED);
+            players.get(1).setColor(models.enums.Color.BLUE);
         }
 
-        return new LobbyResponseMessage(
+        return new LobbyResponse(
                 Operation.JOINED_LOBBY,
                 player.getId(),
                 lobbyId,

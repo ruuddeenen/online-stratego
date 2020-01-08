@@ -4,9 +4,7 @@ import models.Player;
 
 import java.util.List;
 
-public interface IGameMessage {
-    String getLobbyId();
-    void setLobbyId(String lobbyId);
+public interface IGameMessage extends ILobbyMessage {
     List<Player> getPlayerList();
     void setPlayerList(List<Player> playerList);
 }

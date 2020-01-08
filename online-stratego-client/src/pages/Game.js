@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
-import { GameConnectMessage } from '../models/MessageModels';
+import { GameConnectMessage, ReadyUpMessage, GetAvailableMovesMessage, MoveMessage } from '../models/MessageModels';
 import Bomb from '../images/pawns/stratego-bomb.webp';
 import Captain from '../images/pawns/stratego-captain.webp';
 import Colonel from '../images/pawns/stratego-colonel.webp';
@@ -37,6 +37,7 @@ class Game extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            preperationMode: true,
             user: null,
             opponent: null,
             lobbyId: null,
@@ -45,7 +46,9 @@ class Game extends Component {
             board: [],
             pawns: [],
             selectedItem: null,
-            pawnsLeftToPlace: []
+            selectedPawn: null,
+            pawnsLeftToPlace: [],
+            allPawnsPlaced: false
         };
 
         // Bindings
@@ -60,31 +63,25 @@ class Game extends Component {
             document.getElementById('canvasOverlay')
         );
 
-        function createImage(url) {
-            let image = new Image();
-            image.src = url;
-            return image;
-        }
-
         this.getSessionStorage();
         this.getUser();
         this.getLobbyId();
         this.connect();
 
         canvasHandler.drawPawns(this.state.pawns);
-
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-            if (this.state.board !== prevState.board) {
-                canvasHandler.setBoard(this.state.board);
-                canvasHandler.drawStrategoBoard(this.state.color, this.state.opponent.color);
-            }
-            if (this.state.pawns !== prevState.pawns) {
-                this.setState({
-                    pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
-                });
-            }
+        if (this.state.board !== prevState.board) {
+            canvasHandler.setBoard(this.state.board);
+            canvasHandler.drawStrategoBoard(this.state.color, this.state.opponent.color, true);
+        }
+        if (this.state.pawns !== prevState.pawns) {
+            this.setState({
+                pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
+            });
+            canvasHandler.drawPawns(this.state.pawns);
+        }
         console.log(this.state, 'state update');
     }
 
@@ -145,7 +142,7 @@ class Game extends Component {
                 _this.state.user.username,
                 _this.state.lobbyId,
                 _this.state.color
-            ))
+            ));
         });
     }
 
@@ -155,14 +152,35 @@ class Game extends Component {
 
         if (message.lobbyId === this.state.lobbyId) {
             if (message.receiver === this.state.user.id) {
-                if (message.operation === 'START_GAME') {
-                    console.log(
-                        message.pawnList);
-                    this.setState({
-                        board: message.fields,
-                        pawns: message.pawnList,
-                        opponent: message.opponent
-                    });
+                // If message is for this client
+                switch (message.operation) {
+                    case 'START_PREP':
+                        this.setState({
+                            board: message.fields,
+                            pawns: message.pawnList,
+                            opponent: message.opponent
+                        });
+                        break;
+                    case 'START_GAME':
+                        this.setState({
+                            preperationMode: false,
+                            pawns: message.pawnList
+                        });
+                        window.alert('Game started!');
+                        canvasHandler.drawStrategoBoard(this.state.color, this.state.opponent.color, false);
+                        break;
+                    case 'POSSIBLE_MOVES':
+                        canvasHandler.drawPossibleMoves(message.positions);
+                        break;
+                    case 'MOVE_PAWN':
+                        this.movePawn(
+                            message.oldPosition,
+                            message.newPosition
+                        );
+                        break;
+                    default:
+                        break;
+
                 }
             }
         }
@@ -171,6 +189,14 @@ class Game extends Component {
     sendMessage = (endPoint, message) => {
         stompClient.send(endPoint, {}, JSON.stringify(message));
         console.log(message, 'SEND');
+    }
+
+    handleReadyUp = () => {
+        this.sendMessage('/app/game/ready', new ReadyUpMessage(
+            this.state.user.id,
+            this.state.lobbyId,
+            this.state.pawns
+        ));
     }
 
     getPawnOnPosition(x, y) {
@@ -186,8 +212,12 @@ class Game extends Component {
     handleMouseMove(e) {
         const x = Math.floor(e.nativeEvent.layerX / e.target.width * 10);
         const y = Math.floor(e.nativeEvent.layerY / e.target.height * 10);
-        if (this.getPawnOnPosition(x, y) !== null) {
-            canvasHandler.drawCrossAtPosition(x, y);
+        if (this.state.preperationMode) {
+            if (this.getPawnOnPosition(x, y) !== null && this.state.selectedItem === '') {
+                canvasHandler.drawCrossAtPosition(x, y);
+            } else {
+                canvasHandler.clearOverlay();
+            }
         }
     }
 
@@ -195,25 +225,95 @@ class Game extends Component {
         const x = Math.floor(e.nativeEvent.layerX / e.target.width * 10);
         const y = Math.floor(e.nativeEvent.layerY / e.target.height * 10);
 
-        // ONLY IN PREPARATION MODE
-        if (y > 5) {
-            let selectedPawn = this.getPawnOnPosition(x, y);
-            if (selectedPawn === null) {
-                this.placePawn(this.state.pawns, this.state.selectedItem, x, y);
-            } else {
-                this.removePawn(selectedPawn);
+        if (this.state.preperationMode) {
+            if (y > 5) {
+                this.placeOrRemovePawn(x, y);
             }
-            canvasHandler.drawPawns(this.state.pawns);
+        } else {
+            console.log(this.getPawnOnPosition(x,y))
+            if (this.getPawnOnPosition(x,y) === null) {
+                console.log(this.state.selectedItem)
+                if (this.state.selectedPawn !== null && this.state.selectedPawn !== '') {
+                    this.sendMessage('/app/game/move', new MoveMessage(
+                        this.state.user.id,
+                        this.state.lobbyId,
+                        this.state.selectedPawn,
+                        { x: x, y: y }
+                    ));
+                }
 
-            this.setState({
-                pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
-            });
+            } else {
+                const pawn = this.getPawnOnPosition(x, y);
+                this.setState({
+                    selectedPawn: pawn
+                })
+                this.getPawnMoves(pawn);
+            }
         }
-
     }
 
-    handleMouseOut(e){
+    movePawn(oldPosition, newPosition) {
+        console.log(oldPosition, 'old')
+        console.log(newPosition, 'new')
+        const pawn = this.getPawnOnPosition(oldPosition.x, oldPosition.y);
+        pawn.position = newPosition;
+        canvasHandler.drawPawns(this.state.pawns)
+    }
+
+    getPawnMoves(pawn) {
+        this.sendMessage('/app/game/moves', new GetAvailableMovesMessage(
+            this.state.user.id,
+            this.state.lobbyId,
+            pawn
+        ));
+    }
+
+    placeOrRemovePawn(x, y) {
+        let selectedPawn = this.getPawnOnPosition(x, y);
+        if (selectedPawn === null) {
+            this.placePawn(this.state.pawns, this.state.selectedItem, x, y);
+        } else {
+            this.removePawn(selectedPawn);
+        }
+        canvasHandler.drawPawns(this.state.pawns);
+
+        this.setState({
+            pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
+        });
+    }
+
+    handleMouseOut() {
         this.selectPawn('');
+        canvasHandler.clearOverlay();
+    }
+
+    handleClearAll = () => {
+        const pawnList = this.state.pawns;
+        for (let l = 0; l < pawnList.length; l++) {
+            this.removePawn(pawnList[l]);
+        }
+        this.setState({
+            pawns: pawnList
+        });
+        canvasHandler.drawPawns(this.state.pawns);
+        this.setState({
+            pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
+        });
+        canvasHandler.clearOverlay();
+    }
+
+    handleRandomSetUp = () => {
+        const pawnList = this.state.pawns;
+        let i = 0;
+        for (let x = 0; x < this.state.board.length; x++) {
+            for (let y = 6; y < this.state.board.length; y++) {
+                this.placePawn(pawnList, pawnList[i++].name, x, y);
+            }
+        }
+        canvasHandler.drawPawns(this.state.pawns);
+        this.setState({
+            pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
+        });
     }
 
     removePawn(pawn) {
@@ -252,6 +352,7 @@ class Game extends Component {
             case 'General': return url(General);
             case 'Marshal': return url(Marshal);
             case 'Bomb': return url(Bomb);
+            default: return null;
         }
 
         function url(imageUrl) {
@@ -264,7 +365,6 @@ class Game extends Component {
             selectedItem: selectedItem
         });
     }
-    
 
     getPawnByRank(rank, array) {
         for (let l = 0; l < array.length; l++) {
@@ -274,10 +374,8 @@ class Game extends Component {
         }
     }
 
-
-
     getPawnsLeftToPlace(pawnArray) {
-        return [
+        const arr = [
             this.getPawnCountLeftToPlace(pawnArray, 'Flag'),
             this.getPawnCountLeftToPlace(pawnArray, 'Spy'),
             this.getPawnCountLeftToPlace(pawnArray, 'Scout'),
@@ -291,6 +389,18 @@ class Game extends Component {
             this.getPawnCountLeftToPlace(pawnArray, 'Marshal'),
             this.getPawnCountLeftToPlace(pawnArray, 'Bomb')
         ];
+
+        for (let l = 0; l < arr.length; l++) {
+            if (arr[l] === 0) {
+                continue;
+            } else {
+                return arr;
+            }
+        }
+        this.setState({
+            allPawnsPlaced: true
+        });
+        return arr;
     }
 
     // RENDER FUNCTIONS
@@ -302,6 +412,12 @@ class Game extends Component {
                 <div className='row'>
                     <div id='left' className='col-md'>
                         {this.createButtons(this.state.pawns)}
+                        <Button
+                            className='btn-warning'
+                            onClick={this.handleReadyUp}
+                            disabled={!this.state.allPawnsPlaced}>
+                            Ready up!
+                        </Button>
                     </div>
                     <div className='center col-md'>
                         <div className='grid'>
@@ -326,7 +442,23 @@ class Game extends Component {
                                     height={canvasDimensions.height.medium}
                                     onMouseMove={this.handleMouseMove.bind(this)}
                                     onMouseDown={this.handleMouseClick.bind(this)}
-                                    onMouseOut={this.handleMouseOut.bind(this)}/>
+                                    onMouseOut={this.handleMouseOut.bind(this)} />
+                            </div>
+                            <div className='row'>
+                                <div className='col sm-6'>
+                                    <Button
+                                        className='btn-info'
+                                        onClick={this.handleRandomSetUp}>
+                                        Randomize set-up
+                                    </Button>
+                                </div>
+                                <div className='col sm-6'>
+                                    <Button
+                                        className='btn-danger'
+                                        onClick={this.handleClearAll}>
+                                        Clear all
+                                     </Button>
+                                </div>
                             </div>
                         </div>
                     </div>

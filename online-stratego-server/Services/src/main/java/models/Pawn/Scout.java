@@ -1,10 +1,13 @@
 package models.Pawn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.Position;
 import models.enums.Color;
 
 public class Scout extends Pawn {
-    public Scout(Color color) {
+    @JsonCreator
+    public Scout(@JsonProperty("color")Color color) {
         super(2, color);
     }
 

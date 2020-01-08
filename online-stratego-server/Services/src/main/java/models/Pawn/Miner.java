@@ -1,10 +1,13 @@
 package models.Pawn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.enums.BattleResult;
 import models.enums.Color;
 
 public class Miner extends Pawn{
-    public Miner(Color color) {
+    @JsonCreator
+    public Miner(@JsonProperty("color")Color color) {
         super(3, color);
     }
 

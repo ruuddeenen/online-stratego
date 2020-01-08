@@ -107,6 +107,7 @@
 
 .canvasWrapper {
   grid-row-start: 1;
+  margin-bottom: 6px;
 }
 
 .wrapper canvas {

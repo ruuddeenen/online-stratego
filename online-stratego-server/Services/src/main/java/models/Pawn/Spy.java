@@ -1,10 +1,13 @@
 package models.Pawn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.enums.BattleResult;
 import models.enums.Color;
 
 public class Spy extends Pawn{
-    public Spy(Color color) {
+    @JsonCreator
+    public Spy(@JsonProperty("color")Color color) {
         super(1, color);
     }
 

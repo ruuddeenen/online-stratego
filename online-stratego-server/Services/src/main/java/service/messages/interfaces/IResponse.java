@@ -2,7 +2,7 @@ package service.messages.interfaces;
 
 import service.Operation;
 
-public interface IResponse {
+public interface IResponse extends ILobbyMessage {
     void setOperation(Operation operation);
 
     Operation getOperation();

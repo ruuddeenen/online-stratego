@@ -87,7 +87,7 @@ class Lobby extends Component {
                         buttonDisabled: false
                     })
                 }
-            } else if (message.operation === 'START_GAME') {
+            } else if (message.operation === 'OPEN_GAME') {
                 window.location = '/game';
             }
         }

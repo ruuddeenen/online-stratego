@@ -21,3 +21,26 @@ export class GameStartMessage {
         this.playerList = playerList;
     };
 }
+
+export class ReadyUpMessage {
+    constructor(id, lobbyId, pawnList){
+        this.id = id;
+        this.lobbyId = lobbyId;
+        this.pawnList = pawnList;
+    }
+}
+
+export class GetAvailableMovesMessage {
+    constructor(id, lobbyId, pawn){
+        this.id = id;
+        this.lobbyId = lobbyId;
+        this.pawn = pawn;
+    }
+}
+
+export class MoveMessage extends GetAvailableMovesMessage{
+    constructor(id, lobbyId, pawn, position){
+        super(id, lobbyId, pawn);
+        this.position = position;
+    }
+}

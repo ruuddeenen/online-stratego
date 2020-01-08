@@ -1,9 +1,12 @@
 package models.Pawn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.enums.Color;
 
 public class Lieutenant extends Pawn {
-    public Lieutenant(Color color) {
+    @JsonCreator
+    public Lieutenant(@JsonProperty("color")Color color) {
         super(5, color);
     }
 }

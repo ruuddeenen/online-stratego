@@ -1,26 +1,24 @@
 package models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.Pawn.Pawn;
-import models.enums.Color;
 
 import java.util.List;
 
 public class Player {
     private String id;
     private String username;
-    private Color color;
+    private models.enums.Color color;
     private List<Pawn> defeatedPawns;
 
-    public Player(){
-
-    }
-
-    public Player(String id, String username){
+    @JsonCreator
+    public Player(@JsonProperty("id") String id, @JsonProperty("username") String username){
         this.id = id;
         this.username = username;
     }
 
-    public Player(String id, String username, Color color){
+    public Player(String id, String username, models.enums.Color color){
         this(id, username);
         setColor(color);
     }
@@ -41,11 +39,12 @@ public class Player {
         this.username = username;
     }
 
-    public void setColor(Color color){
+    public void setColor(models.enums.Color color){
         this.color = color;
     }
 
-    public Color getColor(){
+    public models.enums.Color getColor(){
         return color;
     }
+
 }

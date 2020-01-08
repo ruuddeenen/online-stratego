@@ -1,6 +1,6 @@
 package service.messages.interfaces;
 
-public interface IConnectMessage {
+public interface IConnectMessage extends ILobbyMessage {
     void setId(String id);
 
     String getId();
@@ -8,8 +8,4 @@ public interface IConnectMessage {
     void setUsername(String username);
 
     String getUsername();
-
-    void setLobbyId(String lobbyId);
-
-    String getLobbyId();
 }

@@ -1,5 +1,7 @@
 package models.Pawn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import models.Position;
 import models.enums.BattleResult;
 import models.enums.Color;
@@ -11,7 +13,8 @@ public abstract class Pawn {
     private Color color;
     private boolean revealed;
 
-    public Pawn(int rank, Color color) {
+    @JsonCreator
+    public Pawn(@JsonProperty("rank") int rank, @JsonProperty("color") Color color) {
         this.rank = rank;
         this.color = color;
         this.name = getClass().getSimpleName();
@@ -50,7 +53,7 @@ public abstract class Pawn {
     public boolean canMoveTo(Position newPosition) {
         if (position.getY() == newPosition.getY()) {     // Als Y gelijk is
             return (position.getX() == newPosition.getX() - 1 || position.getX() == newPosition.getX() + 1);
-        } else if (position.getX() == newPosition.getX()){
+        } else if (position.getX() == newPosition.getX()) {
             return (position.getY() == newPosition.getY() - 1 || position.getY() == newPosition.getY() + 1);
         }
         return false;
