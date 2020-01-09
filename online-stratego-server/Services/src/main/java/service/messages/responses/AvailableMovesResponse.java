@@ -6,18 +6,28 @@ import service.Operation;
 import java.util.List;
 
 public class AvailableMovesResponse extends Response {
-    public List<Position> getPositions() {
-        return positions;
+    List<Position> moves;
+    List<Position> attacks;
+
+    public List<Position> getMoves() {
+        return moves;
     }
 
-    public void setPositions(List<Position> positions) {
-        this.positions = positions;
+    public void setMoves(List<Position> moves) {
+        this.moves = moves;
     }
 
-    List<Position> positions;
+    public List<Position> getAttacks() {
+        return attacks;
+    }
 
-    public AvailableMovesResponse(Operation operation, String receiver, String lobbyId, List<Position> positions) {
+    public void setAttacks(List<Position> attacks) {
+        this.attacks = attacks;
+    }
+
+    public AvailableMovesResponse(Operation operation, String receiver, String lobbyId, List<Position> moves, List<Position> attacks) {
         super(operation, receiver, lobbyId);
-        this.positions = positions;
+        this.moves = moves;
+        this.attacks = attacks;
     }
 }

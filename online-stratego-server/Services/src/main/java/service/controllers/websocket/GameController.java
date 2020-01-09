@@ -2,6 +2,7 @@ package service.controllers.websocket;
 
 import models.*;
 import models.Pawn.*;
+import models.enums.Color;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -11,7 +12,7 @@ import service.Operation;
 import service.messages.incoming.GameConnectMessage;
 import service.messages.incoming.GetAvailableMovesMessage;
 import service.messages.incoming.MoveMessage;
-import service.messages.incoming.ReadyUpMessage;
+import service.messages.incoming.GameMessage;
 import service.messages.responses.*;
 
 import java.util.*;
@@ -19,7 +20,7 @@ import java.util.*;
 @Controller
 public class GameController {
     private static Map<String, Game> gameMap = new HashMap<>();
-    private static Set<Player> playerSet = new HashSet<>();
+    // private static Set<Player> playerSet = new HashSet<>();
     private static SimpMessageSendingOperations messagingTemplate;
 
     @Autowired
@@ -29,24 +30,35 @@ public class GameController {
 
     @MessageMapping("/game/move")
     @SendTo("/topic/game")
-    public Response move(MoveMessage message){
+    public Response move(MoveMessage message) {
         String lobbyId = message.getLobbyId();
         Game game = gameMap.get(lobbyId);
         Pawn pawn = message.getPawn();
-        Position oldPosition = pawn.getPosition();
-        boolean success = game.getBoard().movePawn(message.getPawn(), message.getPosition());
-        Position newPosition = pawn.getPosition();
-        if (success){
-            return new MoveResponse(
-                    Operation.MOVE_PAWN,
-                    message.getId(),
-                    message.getLobbyId(),
-                    oldPosition,
-                    newPosition
-            );
+        Player player = game.getPlayerById(message.getId());
+
+        if (pawn.getColor() != player.getColor()){
+            return new ErrorResponse("Trying to move opponents pawn!");
+        }
+        Board board = game.getBoard();
+
+        boolean success = board.movePawn(pawn.getPosition(), message.getPosition());
+        if (success) {
+            for (Player p : game.getPlayerSet()
+                 ) {
+                GameResponse response = new GameResponse(
+                        Operation.MOVE_PAWN,
+                        p.getId(),
+                        lobbyId,
+                        board.getPawnsForColor(p.getColor()),
+                        board.getDefeatedPawnsByColor(p.getColor()),
+                        game.getTurn()
+                );
+                messagingTemplate.convertAndSend("/topic/game", response);
+            }
         } else {
             return new ErrorResponse("Not a valid move!");
         }
+        return null;
     }
 
 
@@ -56,24 +68,29 @@ public class GameController {
         String lobbyId = message.getLobbyId();
         Pawn pawn = message.getPawn();
         Game game = gameMap.get(lobbyId);
+        if (game.getPlayerById(message.getId()).getColor() == pawn.getColor()) {
+            return new AvailableMovesResponse(
+                    Operation.POSSIBLE_MOVES,
+                    message.getId(),
+                    message.getLobbyId(),
+                    game.getBoard().getPossibleMoves(pawn),
+                    game.getBoard().getPossibleAttacks(pawn)
+            );
+        } else {
+            return new ErrorResponse("Trying to move opponents pawn!");
+        }
 
-        return new AvailableMovesResponse(
-                Operation.POSSIBLE_MOVES,
-                message.getId(),
-                message.getLobbyId(),
-                game.getBoard().getPossibleMoves(pawn)
-        );
     }
 
 
     @MessageMapping("/game/ready")
     @SendTo("/topic/game")
-    public void readyUp(ReadyUpMessage message) {
+    public void readyUp(GameMessage message) {
         String lobbyId = message.getLobbyId();
         Game game = gameMap.get(lobbyId);
-        Player player = getPlayerById(message.getId());
+        Player player = game.getPlayerById(message.getId());
         assert player != null;
-        models.enums.Color color = player.getColor();
+        Color color = player.getColor();
 
         List<Pawn> pawnList = message.getPawnList();
         game.addPawns(pawnList, color);
@@ -85,7 +102,8 @@ public class GameController {
                         Operation.START_GAME,
                         p.getId(),
                         lobbyId,
-                        game.getBoard().getPawnsForPlayer(p),
+                        game.getBoard().getPawnsForColor(p.getColor()),
+                        game.getBoard().getDefeatedPawnsByColor(p.getColor()),
                         game.getTurn()
                 );
                 messagingTemplate.convertAndSend("/topic/game", responseMessage);
@@ -96,9 +114,19 @@ public class GameController {
     @MessageMapping("/game")
     @SendTo("/topic/game")
     public Response connect(GameConnectMessage message) {
-        playerSet.add(new Player(message.getId(), message.getUsername(), message.getColor()));
-        List<Player> players = LobbyController.getPlayersByLobbyId(message.getLobbyId());
-        Player player = null, opponent = null;
+        String lobbyId = message.getLobbyId();
+        // Get game / Create new game
+        Game game = gameMap.get(lobbyId);
+        if (game == null) {
+            gameMap.put(lobbyId, new Game());
+            game = gameMap.get(lobbyId);
+        }
+
+        // Get player + set opponent
+        List<Player> players = LobbyController.getPlayersByLobbyId(lobbyId);
+
+        Player player = null;
+        Player opponent = null;
         for (Player p : players
         ) {
             if (p.getId().equals(message.getId())) {
@@ -107,47 +135,16 @@ public class GameController {
                 opponent = p;
             }
         }
-
-        Game game = gameMap.get(message.getLobbyId());
-        if (game == null) {
-            gameMap.put(message.getLobbyId(), new Game());
-            game = gameMap.get(message.getLobbyId());
-        }
+        assert player != null;
         game.addPlayer(player);
 
-        assert player != null;
         return new GameStartResponse(
                 Operation.START_PREP,
                 player.getId(),
                 opponent,
                 message.getLobbyId(),
                 Board.getStandardPawns(player.getColor()),
-                STANDARD_FIELD
-
+                game.getBoard().getField()
         );
     }
-
-    private Player getPlayerById(String id) {
-        for (Player p : playerSet
-        ) {
-            if (p.getId().equals(id)) {
-                return p;
-            }
-        }
-        return null;
-    }
-
-
-    private boolean[][] STANDARD_FIELD = new boolean[][]{
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, false, false, true, true, false, false, true, true},
-            {true, true, false, false, true, true, false, false, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-            {true, true, true, true, true, true, true, true, true, true},
-    };
 }

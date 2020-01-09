@@ -2,35 +2,50 @@ package models;
 
 import models.Pawn.*;
 import models.enums.BattleResult;
+import models.enums.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
     private boolean[][] field = STANDARD_FIELD;
-    private ArrayList<Pawn> pawnList;
+    private List<Pawn> pawnList;
+    private List<Pawn> defeatedPawns;
 
     Board() {
         pawnList = new ArrayList<>();
+        defeatedPawns = new ArrayList<>();
     }
 
-    public List<Pawn> getPawnsForPlayer(Player player) {
+    public List<Pawn> getDefeatedPawnsByColor(Color color){
+        List<Pawn> defeatedByColor = new ArrayList<>();
+        defeatedPawns.forEach(pawn -> {
+            if (pawn.getColor() == Color.oppositeOf(color)){
+                defeatedByColor.add(pawn);
+            }
+        });
+        return defeatedByColor;
+    }
+
+    public List<Pawn> getPawnsForColor(Color color) {
         List<Pawn> newPawnList = new ArrayList<>();
         for (Pawn p : pawnList
         ) {
-            if (p.getColor() == player.getColor() || p.isRevealed()) {         // Is players pawn or is revealed
+            if (p.getColor() == color || p.isRevealed()) {         // Is players pawn or is revealed
                 newPawnList.add(p);
             } else {
                 newPawnList.add(new UnknownPawn(p));
             }
         }
-        if (player.getColor() == models.enums.Color.BLUE) {
+        /*
+        if (color == Color.BLUE) {
             flipPawnPosition(newPawnList);
         }
+        */
         return newPawnList;
     }
 
-    void removePawns(models.enums.Color color) {
+    void removePawns(Color color) {
         List<Pawn> listToRemove = new ArrayList<>();
         pawnList.forEach(pawn -> {
             if (pawn.getColor() == color) {
@@ -42,10 +57,12 @@ public class Board {
         });
     }
 
-    void addToPawnList(List<Pawn> toBeAdded, models.enums.Color color) {
+    void addToPawnList(List<Pawn> toBeAdded, Color color) {
+        /*
         if (color == models.enums.Color.BLUE) {
             flipPawnPosition(toBeAdded);
         }
+        */
         pawnList.addAll(toBeAdded);
     }
 
@@ -61,27 +78,45 @@ public class Board {
         return pawnList;
     }
 
-    private Pawn getPawnOnLocation(Position position) {
-        for (Pawn p : pawnList
-        ) {
-            if (p.getPosition() == position) {
-                return p;
+    public boolean movePawn(Position oldPosition, Position newPosition) {
+        Pawn pawn = getPawnOnPosition(oldPosition);
+        if (pawn != null) {
+            if (pawn.canMoveTo(newPosition)) {
+                Pawn defender = getPawnOnPosition(newPosition);
+                if (defender != null) {
+                    battle(pawn, defender);
+                }
+                pawn.move(newPosition);
+                return true;
+            } else {
+                return false;
             }
         }
-        return null;
+        return false;
     }
 
-    public boolean movePawn(Pawn pawn, Position newPosition) {
-        if (pawn.canMoveTo(newPosition)) {
-            pawn.move(newPosition);
-            return true;
-        } else {
-            return false;
+    private void battle(Pawn pawn, Pawn defender) {
+        switch (pawn.attack(defender)){
+            case WON:
+                pawn.reveal();
+                defeatedPawns.add(defender);
+                pawnList.remove(defender);
+                break;
+            case DRAW:
+                defeatedPawns.add(pawn);
+                defeatedPawns.add(defender);
+                pawnList.remove(pawn);
+                pawnList.remove(defender);
+                break;
+            case LOST:
+                defender.reveal();
+                defeatedPawns.add(pawn);
+                pawnList.remove(pawn);
+                break;
+            case GAME_WON:
+                // todo
+                break;
         }
-    }
-
-    public BattleResult attack(Pawn attacker, Pawn defender) {
-        return attacker.attack(defender);
     }
 
     private static boolean[][] STANDARD_FIELD = {
@@ -97,7 +132,7 @@ public class Board {
             {true, true, true, true, true, true, true, true, true, true},
     };
 
-    public static List<Pawn> getStandardPawns(models.enums.Color color) {
+    public static List<Pawn> getStandardPawns(Color color) {
         PawnFactory factory = new PawnFactory(color);
         List<Pawn> pawns = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
@@ -135,8 +170,8 @@ public class Board {
         for (int x = 0; x < field.length; x++) {
             for (int y = 0; y < field.length; y++) {
                 Position pos = new Position(x, y);
-                if (pawn.canMoveTo(pos)){
-                    if (getPawnOnPosition(pos) == null){
+                if (pawn.canMoveTo(pos)) {
+                    if (getPawnOnPosition(pos) == null) {
                         possiblePositions.add(pos);
                     }
                 }
@@ -145,13 +180,35 @@ public class Board {
         return possiblePositions;
     }
 
-    private Pawn getPawnOnPosition(Position pos){
+    public List<Position> getPossibleAttacks(Pawn pawn) {
+        List<Position> possiblePositions = new ArrayList<>();
+        for (int x = 0; x < field.length; x++) {
+            for (int y = 0; y < field.length; y++) {
+                Position pos = new Position(x, y);
+                if (pawn.canMoveTo(pos)) {
+                    Pawn possiblePawn = getPawnOnPosition(pos);
+                    if (possiblePawn != null) {
+                        if (possiblePawn.getColor() == Color.oppositeOf(pawn.getColor())) {
+                            possiblePositions.add(pos);
+                        }
+                    }
+                }
+            }
+        }
+        return possiblePositions;
+    }
+
+    private Pawn getPawnOnPosition(Position position) {
         for (Pawn p : getPawnList()
-             ) {
-            if (p.getPosition().getX() == pos.getX() &&  p.getPosition().getY() == pos.getY()){
+        ) {
+            if (p.getPosition().getX() == position.getX() && p.getPosition().getY() == position.getY()) {
                 return p;
             }
         }
         return null;
+    }
+
+    public boolean[][] getField() {
+        return field;
     }
 }

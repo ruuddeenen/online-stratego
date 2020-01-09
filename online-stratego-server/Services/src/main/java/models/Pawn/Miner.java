@@ -16,6 +16,11 @@ public class Miner extends Pawn{
         if (defender instanceof Bomb){
             return BattleResult.WON;
         }
+
+        if (defender instanceof Flag){
+            return BattleResult.GAME_WON;
+        }
+
         if (rank > defender.getRank()){
             return BattleResult.WON;
         } else if (rank < defender.getRank()){

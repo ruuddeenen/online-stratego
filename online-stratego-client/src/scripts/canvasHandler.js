@@ -14,6 +14,7 @@ import Scout from '../images/pawns/stratego-scout.webp';
 import Sergeant from '../images/pawns/stratego-sergeant.webp';
 import Spy from '../images/pawns/stratego-spy.webp';
 import UnkownPawn from '../images/stratego-S.webp';
+import Eye from '../images/eye.webp';
 
 
 export class CanvasHandler {
@@ -43,6 +44,7 @@ export class CanvasHandler {
             grass: createImage(Grass),
             water: createImage(Water),
             cross: createImage(Cross),
+            eye: createImage(Eye)
         };
         console.log(this.images, 'images')
 
@@ -58,7 +60,7 @@ export class CanvasHandler {
         this.size = board.length;
     }
 
-    drawStrategoBoard(playerColor, opponentColor, overlay) {
+    drawStrategoBoard(overlay) {
         this.ctxBoard.fillRect(0, 0, this.width, this.height);
 
         for (var y = 0; y < this.size; y++) {
@@ -79,10 +81,10 @@ export class CanvasHandler {
 
                 if (overlay) {
                     if (y < 4) {
-                        this.drawOverlay(x, y, opponentColor);
+                        this.drawOverlayOnBoard(x, y, 'BLUE');
                     }
                     else if (y > 5) {
-                        this.drawOverlay(x, y, playerColor);
+                        this.drawOverlayOnBoard(x, y, 'RED');
                     }
                 }
             }
@@ -90,7 +92,8 @@ export class CanvasHandler {
         this.drawBorder();
     }
 
-    drawPawns(pawnArray) {
+    drawPawns(pawnArray, color) {
+        console.log(pawnArray, 'drawing pawns')
         this.clear(this.ctxPawns);
 
         for (let i = 0; i < pawnArray.length; i++) {
@@ -100,6 +103,14 @@ export class CanvasHandler {
 
                 if (pawnArray[i].rank === -1) {
                     image = this.images.unkownPawn;
+                } else if (pawnArray[i].revealed && pawnArray[i].color === color) {
+                    this.ctxPawns.drawImage(
+                        this.images.eye,
+                        (this.width / this.size) * position.x + 5,
+                        (this.height / this.size) * position.y + 5,
+                        this.width / this.size - 10,
+                        this.height / this.size - 10
+                    );
                 }
 
                 this.ctxPawns.fillStyle = pawnArray[i].color;
@@ -109,7 +120,7 @@ export class CanvasHandler {
                     (this.height / this.size) * position.y + 1,
                     this.width / this.size - 1,
                     this.height / this.size - 1
-                )
+                );
                 this.ctxPawns.globalAlpha = 1;
 
                 this.ctxPawns.drawImage(
@@ -118,7 +129,7 @@ export class CanvasHandler {
                     (this.height / this.size) * position.y + 5,
                     this.width / this.size - 10,
                     this.height / this.size - 10
-                )
+                );
             }
         }
     }
@@ -134,7 +145,7 @@ export class CanvasHandler {
         this.ctxBoard.stroke();
     }
 
-    drawOverlay(x, y, color) {
+    drawOverlayOnBoard(x, y, color) {
         this.ctxBoard.fillStyle = color;
         this.ctxBoard.globalAlpha = 0.4;
         this.ctxBoard.fillRect(
@@ -142,9 +153,23 @@ export class CanvasHandler {
             (this.height / this.size) * y,
             this.width / this.size,
             this.height / this.size
-        )
+        );
         this.ctxBoard.globalAlpha = 1.0;
         this.ctxBoard.fillStyle = 'black';
+    }
+
+    drawOverlay(x, y, color) {
+        console.log(x, y, color);
+        this.ctxOverlay.fillStyle = color;
+        this.ctxOverlay.globalAlpha = 0.4;
+        this.ctxOverlay.fillRect(
+            (this.width / this.size) * x,
+            (this.height / this.size) * y,
+            this.width / this.size,
+            this.height / this.size
+        );
+        this.ctxOverlay.globalAlpha = 1.0;
+        this.ctxOverlay.fillStyle = 'black';
     }
 
     drawCrossAtPosition(x, y) {
@@ -158,7 +183,7 @@ export class CanvasHandler {
         );
     }
 
-    drawDot(x, y) {
+    drawDot(x, y, color) {
         const startX = (((this.width / this.size) * x) + ((this.width / this.size) * (x + 1))) / 2;
         const startY = (((this.height / this.size) * y) + ((this.height / this.size) * (y + 1))) / 2;
         this.ctxOverlay.beginPath();
@@ -170,7 +195,7 @@ export class CanvasHandler {
             2 * Math.PI,
             false
         );
-        this.ctxOverlay.fillStyle = 'yellow';
+        this.ctxOverlay.fillStyle = color;
         this.ctxOverlay.fill();
         this.ctxOverlay.lineWidth = 2;
         this.ctxOverlay.strokeStyle = 'black';
@@ -185,10 +210,10 @@ export class CanvasHandler {
         context.clearRect(0, 0, this.width, this.height);
     }
 
-    drawPossibleMoves(positions) {
-        this.clearOverlay();
+    drawPossibleMoves(positions, color) {
         for (let l = 0; l < positions.length; l++) {
-            this.drawDot(positions[l].x, positions[l].y);
+            this.drawDot(positions[l].x, positions[l].y, color);
         }
     }
+
 }

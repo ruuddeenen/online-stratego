@@ -22,7 +22,7 @@ public class Game {
         playerSet.add(player);
     }
 
-    public void addPawns(List<Pawn> pawnList, models.enums.Color color) {
+    public void addPawns(List<Pawn> pawnList, Color color) {
         if (pawnList.size() != 40) {
             return;
         }
@@ -48,6 +48,27 @@ public class Game {
 
     public void setTurn(Color turn) {
         this.turn = turn;
+    }
+
+
+    public Player getPlayerByColor(Color color) {
+        for (Player p : playerSet
+        ) {
+            if (p.getColor().equals(color)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public Player getPlayerById(String id) {
+        for (Player p : playerSet
+        ) {
+            if (p.getId().equals(id)) {
+                return p;
+            }
+        }
+        return null;
     }
 
 }

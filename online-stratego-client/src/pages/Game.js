@@ -48,7 +48,8 @@ class Game extends Component {
             selectedItem: null,
             selectedPawn: null,
             pawnsLeftToPlace: [],
-            allPawnsPlaced: false
+            allPawnsPlaced: false,
+            pawnInfo: []
         };
 
         // Bindings
@@ -64,23 +65,21 @@ class Game extends Component {
         );
 
         this.getSessionStorage();
-        this.getUser();
-        this.getLobbyId();
         this.connect();
 
-        canvasHandler.drawPawns(this.state.pawns);
+        canvasHandler.drawPawns(this.state.pawns, this.state.color);
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.state.board !== prevState.board) {
             canvasHandler.setBoard(this.state.board);
-            canvasHandler.drawStrategoBoard(this.state.color, this.state.opponent.color, true);
+            canvasHandler.drawStrategoBoard(true);
         }
         if (this.state.pawns !== prevState.pawns) {
             this.setState({
                 pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
             });
-            canvasHandler.drawPawns(this.state.pawns);
+            canvasHandler.drawPawns(this.state.pawns, this.state.color);
         }
         console.log(this.state, 'state update');
     }
@@ -117,18 +116,6 @@ class Game extends Component {
         });
     }
 
-    getUser() {
-        this.setState({
-            user: JSON.parse(sessionStorage.getItem('user'))
-        });
-    }
-
-    getLobbyId() {
-        this.setState({
-            lobbyId: sessionStorage.getItem('lobbyId')
-        });
-    }
-
     connect = () => {
         const _this = this;
         const socket = new SockJS('http://localhost:9000/ws');
@@ -152,13 +139,26 @@ class Game extends Component {
 
         if (message.lobbyId === this.state.lobbyId) {
             if (message.receiver === this.state.user.id) {
+                console.log(message, 'read');
                 // If message is for this client
                 switch (message.operation) {
                     case 'START_PREP':
+                        const pawnInfo = [];
+                        for (let l = 0; l < 12; l++) {
+                            const pawn = this.getPawnByRank(l, message.pawnList);
+                            const info = {
+                                name: pawn.name,
+                                rank: pawn.rank,
+                                max: this.getPawnCountLeftToPlace(message.pawnList, pawn.name)
+                            };
+                            pawnInfo.push(info);
+                        }
+
                         this.setState({
                             board: message.fields,
                             pawns: message.pawnList,
-                            opponent: message.opponent
+                            opponent: message.opponent,
+                            pawnInfo: pawnInfo
                         });
                         break;
                     case 'START_GAME':
@@ -166,17 +166,24 @@ class Game extends Component {
                             preperationMode: false,
                             pawns: message.pawnList
                         });
+                        sessionStorage.setItem('pawns', this.state.pawns);
                         window.alert('Game started!');
-                        canvasHandler.drawStrategoBoard(this.state.color, this.state.opponent.color, false);
+                        canvasHandler.drawStrategoBoard(false);
                         break;
                     case 'POSSIBLE_MOVES':
-                        canvasHandler.drawPossibleMoves(message.positions);
+                        canvasHandler.clearOverlay();
+                        canvasHandler.drawOverlay(this.state.selectedPawn.position.x, this.state.selectedPawn.position.y, 'rgba(255,255,255,0.3)');
+                        canvasHandler.drawPossibleMoves(message.moves, 'yellow');
+                        canvasHandler.drawPossibleMoves(message.attacks, 'red');
                         break;
                     case 'MOVE_PAWN':
-                        this.movePawn(
-                            message.oldPosition,
-                            message.newPosition
-                        );
+                        this.setState({
+                            pawns: message.pawnList,
+                            defeatedPawnList: message.defeatedPawnList
+                        });
+                        canvasHandler.drawPawns(this.state.pawns, this.state.color);
+                        canvasHandler.clearOverlay();
+                        sessionStorage.setItem('pawns', this.state.pawns);
                         break;
                     default:
                         break;
@@ -226,12 +233,24 @@ class Game extends Component {
         const y = Math.floor(e.nativeEvent.layerY / e.target.height * 10);
 
         if (this.state.preperationMode) {
-            if (y > 5) {
-                this.placeOrRemovePawn(x, y);
-            }
+            if (this.state.color === 'RED' && y > 5) { this.placeOrRemovePawn(x, y); }
+            else if (this.state.color === 'BLUE' && y < 4) { this.placeOrRemovePawn(x, y); }
         } else {
-            console.log(this.getPawnOnPosition(x,y))
-            if (this.getPawnOnPosition(x,y) === null) {
+            console.log(this.getPawnOnPosition(x, y));
+
+            const pawn = this.getPawnOnPosition(x, y);
+            if (pawn === null || pawn.color === this.state.opponent.color) {
+                this.movePawn(x, y);
+            } else if (pawn.color === this.state.color) {
+                this.setState({
+                    selectedPawn: pawn
+                });
+                this.getPawnMoves(pawn);
+            } else if (this.state.selectedPawn === null) {
+                return;
+            }
+            /*
+            if (this.getPawnOnPosition(x, y) === null) {
                 console.log(this.state.selectedItem)
                 if (this.state.selectedPawn !== null && this.state.selectedPawn !== '') {
                     this.sendMessage('/app/game/move', new MoveMessage(
@@ -244,21 +263,36 @@ class Game extends Component {
 
             } else {
                 const pawn = this.getPawnOnPosition(x, y);
-                this.setState({
-                    selectedPawn: pawn
-                })
-                this.getPawnMoves(pawn);
+                if (pawn.color === this.state.color) {
+                    this.setState({
+                        selectedPawn: pawn
+                    })
+                    this.getPawnMoves(pawn);
+                } else {
+                    if (this.state.selectedPawn !== null && this.state.selectedPawn !== '') {
+                        this.sendMessage('/app/game/move', new MoveMessage(
+                            this.state.user.id,
+                            this.state.lobbyId,
+                            this.state.selectedPawn,
+                            { x: x, y: y }
+                        ));
+                    }
+                }
             }
+            */
         }
     }
 
-    movePawn(oldPosition, newPosition) {
-        console.log(oldPosition, 'old')
-        console.log(newPosition, 'new')
-        const pawn = this.getPawnOnPosition(oldPosition.x, oldPosition.y);
-        pawn.position = newPosition;
-        canvasHandler.drawPawns(this.state.pawns)
+    movePawn(x, y) {
+        this.sendMessage('/app/game/move', new MoveMessage(
+            this.state.user.id,
+            this.state.lobbyId,
+            this.state.selectedPawn,
+            { x: x, y: y }
+        ));
     }
+
+
 
     getPawnMoves(pawn) {
         this.sendMessage('/app/game/moves', new GetAvailableMovesMessage(
@@ -275,7 +309,7 @@ class Game extends Component {
         } else {
             this.removePawn(selectedPawn);
         }
-        canvasHandler.drawPawns(this.state.pawns);
+        canvasHandler.drawPawns(this.state.pawns, this.state.color);
 
         this.setState({
             pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
@@ -295,7 +329,7 @@ class Game extends Component {
         this.setState({
             pawns: pawnList
         });
-        canvasHandler.drawPawns(this.state.pawns);
+        canvasHandler.drawPawns(this.state.pawns, this.state.color);
         this.setState({
             pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
         });
@@ -305,12 +339,21 @@ class Game extends Component {
     handleRandomSetUp = () => {
         const pawnList = this.state.pawns;
         let i = 0;
-        for (let x = 0; x < this.state.board.length; x++) {
-            for (let y = 6; y < this.state.board.length; y++) {
-                this.placePawn(pawnList, pawnList[i++].name, x, y);
+        if (this.state.color === 'RED') {
+            for (let x = 0; x < this.state.board.length; x++) {
+                for (let y = 6; y < this.state.board.length; y++) {
+                    this.placePawn(pawnList, pawnList[i++].name, x, y);
+                }
             }
+        } else if (this.state.color === 'BLUE') {
+            for (let x = 0; x < this.state.board.length; x++) {
+                for (let y = 3; y >= 0; y--) {
+                    this.placePawn(pawnList, pawnList[i++].name, x, y);
+                }
+            }
+
         }
-        canvasHandler.drawPawns(this.state.pawns);
+        canvasHandler.drawPawns(this.state.pawns, this.state.color);
         this.setState({
             pawnsLeftToPlace: this.getPawnsLeftToPlace(this.state.pawns)
         });
@@ -411,8 +454,9 @@ class Game extends Component {
                 {this.getHeader()}
                 <div className='row'>
                     <div id='left' className='col-md'>
-                        {this.createButtons(this.state.pawns)}
+                        {this.createButtons(this.state.pawnInfo)}
                         <Button
+                            hidden={!this.state.preperationMode}
                             className='btn-warning'
                             onClick={this.handleReadyUp}
                             disabled={!this.state.allPawnsPlaced}>
@@ -447,6 +491,7 @@ class Game extends Component {
                             <div className='row'>
                                 <div className='col sm-6'>
                                     <Button
+                                        hidden={!this.state.preperationMode}
                                         className='btn-info'
                                         onClick={this.handleRandomSetUp}>
                                         Randomize set-up
@@ -454,6 +499,7 @@ class Game extends Component {
                                 </div>
                                 <div className='col sm-6'>
                                     <Button
+                                        hidden={!this.state.preperationMode}
                                         className='btn-danger'
                                         onClick={this.handleClearAll}>
                                         Clear all
@@ -491,6 +537,17 @@ class Game extends Component {
         }
     }
 
+    getDefeatedPawnsByRank(rank){
+        const defeatedPawns = this.state.defeatedPawnList;
+        let count = 0;
+        defeatedPawns.forEach(p => {
+            if (p.rank === rank){
+                count++;
+            }
+        });
+        return count;
+    }
+
     createButtons = (pawnArray) => {
         if (pawnArray.length === 0) {
             return;
@@ -501,7 +558,7 @@ class Game extends Component {
         for (let row = 0; row < 12 / 2; row++) {
             let buttons = [];
             for (let i = 0; i < 2; i++) {
-                const name = this.getPawnByRank(rank, pawnArray).name;
+                const name = pawnArray[rank].name;
                 buttons.push(
                     <div className='col-sm' key={i}>
                         <Button
@@ -509,7 +566,10 @@ class Game extends Component {
                             style={{ backgroundImage: this.getBG(name) }}
                             title={name}
                             onClick={e => this.selectPawn(e.target.title)}>
-                            {this.state.pawnsLeftToPlace[rank]}
+                            { this.state.preperationMode && this.state.pawnsLeftToPlace[rank] }
+                            { !this.state.preperationMode && this.state.defeatedPawnList &&  this.getDefeatedPawnsByRank(rank)}
+                            { !this.state.preperationMode && '/'}
+                            { !this.state.preperationMode && this.state.pawnInfo[rank].max}
                         </Button>
                     </div>
                 );

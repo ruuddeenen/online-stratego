@@ -1,10 +1,12 @@
 package service.messages.interfaces;
 
-import models.Player;
+import models.Pawn.Pawn;
 
 import java.util.List;
 
 public interface IGameMessage extends ILobbyMessage {
-    List<Player> getPlayerList();
-    void setPlayerList(List<Player> playerList);
+    void setId(String id);
+    String getId();
+    void setPawnList(List<Pawn> pawnLayout);
+    List<Pawn> getPawnList();
 }

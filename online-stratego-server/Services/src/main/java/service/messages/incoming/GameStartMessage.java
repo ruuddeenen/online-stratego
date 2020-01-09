@@ -1,11 +1,11 @@
 package service.messages.incoming;
 
 import models.Player;
-import service.messages.interfaces.IGameMessage;
+import service.messages.interfaces.IPlayerMessage;
 
 import java.util.List;
 
-public class GameStartMessage implements IGameMessage {
+public class GameStartMessage implements IPlayerMessage {
     private String lobbyId;
     private List<Player> playerList;
 

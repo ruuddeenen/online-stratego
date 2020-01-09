@@ -1,11 +1,11 @@
 package service.messages.incoming;
 
 import models.Pawn.Pawn;
-import service.messages.interfaces.IReadyUpMessage;
+import service.messages.interfaces.IGameMessage;
 
 import java.util.List;
 
-public class ReadyUpMessage implements IReadyUpMessage {
+public class GameMessage implements IGameMessage {
     private String id;
     private String lobbyId;
     private List<Pawn> pawnList;

@@ -43,6 +43,10 @@ public abstract class Pawn {
     }
 
     public BattleResult attack(Pawn defender) {
+        if (defender instanceof Flag){
+            return BattleResult.GAME_WON;
+        }
+
         if (rank > defender.getRank()) {
             return BattleResult.WON;
         } else if (rank < defender.getRank()) {

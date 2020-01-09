@@ -27,6 +27,7 @@ public class LobbyController {
     @MessageMapping("/lobby/startgame")
     @SendTo("/topic/lobby")
     public Response startGame(GameStartMessage message) {
+        // lobbyPlayerMap.remove(message.getLobbyId());
         return new LobbyResponse(
                 Operation.OPEN_GAME,
                 null,
