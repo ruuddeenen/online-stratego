@@ -1,0 +1,37 @@
+{
+  "files": {
+    "main.css": "/static/css/main.73dff245.chunk.css",
+    "main.js": "/static/js/main.337d8bfd.chunk.js",
+    "main.js.map": "/static/js/main.337d8bfd.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.7d04a3fa.js",
+    "runtime-main.js.map": "/static/js/runtime-main.7d04a3fa.js.map",
+    "static/js/2.856c7b6f.chunk.js": "/static/js/2.856c7b6f.chunk.js",
+    "static/js/2.856c7b6f.chunk.js.map": "/static/js/2.856c7b6f.chunk.js.map",
+    "index.html": "/index.html",
+    "precache-manifest.7848e0d54957fa9efa288fc1c93dd23e.js": "/precache-manifest.7848e0d54957fa9efa288fc1c93dd23e.js",
+    "service-worker.js": "/service-worker.js",
+    "static/css/main.73dff245.chunk.css.map": "/static/css/main.73dff245.chunk.css.map",
+    "static/media/index.css": "/static/media/KochFraktur.90b12954.ttf",
+    "static/media/App.css": "/static/media/background.821300b0.jpg",
+    "static/media/grass.png": "/static/media/grass.fac09060.png",
+    "static/media/stratego-bomb.webp": "/static/media/stratego-bomb.f4d3b4d8.webp",
+    "static/media/stratego-captain.webp": "/static/media/stratego-captain.dc2fd759.webp",
+    "static/media/stratego-colonel.webp": "/static/media/stratego-colonel.197e1ee4.webp",
+    "static/media/stratego-flag.webp": "/static/media/stratego-flag.e14abb9a.webp",
+    "static/media/stratego-general.webp": "/static/media/stratego-general.fb480ab3.webp",
+    "static/media/stratego-lieutenant.webp": "/static/media/stratego-lieutenant.9df8eab2.webp",
+    "static/media/stratego-major.webp": "/static/media/stratego-major.92d1a53c.webp",
+    "static/media/stratego-marshal.webp": "/static/media/stratego-marshal.aab1378a.webp",
+    "static/media/stratego-miner.webp": "/static/media/stratego-miner.94171ebf.webp",
+    "static/media/stratego-scout.webp": "/static/media/stratego-scout.dc487852.webp",
+    "static/media/stratego-sergeant.webp": "/static/media/stratego-sergeant.11eaead2.webp",
+    "static/media/stratego-spy.webp": "/static/media/stratego-spy.90de642a.webp",
+    "static/media/water.png": "/static/media/water.597de213.png"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.7d04a3fa.js",
+    "static/js/2.856c7b6f.chunk.js",
+    "static/css/main.73dff245.chunk.css",
+    "static/js/main.337d8bfd.chunk.js"
+  ]
+}
