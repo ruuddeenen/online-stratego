@@ -39,6 +39,10 @@
 # *.iml
 # *.ipr
 
+# Maven
+log/
+target/
+
 # CMake
 cmake-build-*/
 

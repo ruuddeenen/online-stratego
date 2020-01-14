@@ -1,4 +1,0 @@
-connection\ConnectionManager.class
-module-info.class
-repositories\UserRepository.class
-interfaces\IUserRepository.class
