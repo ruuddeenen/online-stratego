@@ -42,6 +42,7 @@
 # Maven
 log/
 target/
+.idea/
 
 # CMake
 cmake-build-*/
