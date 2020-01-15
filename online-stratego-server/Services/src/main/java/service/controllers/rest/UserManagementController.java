@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 public class UserManagementController {
     private IUserRepository userRepository = new UserRepository();
 
-    @PostMapping(value = "/register")
+    @GetMapping(value = "/register")
     public UserResponse register(@RequestParam(value = "username") String username, @RequestParam(value = "password") String password){
         return userRepository.register(username, password);
     }

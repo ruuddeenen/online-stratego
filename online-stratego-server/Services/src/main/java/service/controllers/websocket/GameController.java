@@ -32,25 +32,38 @@ public class GameController {
     public void move(MoveMessage message) {
         String lobbyId = message.getLobbyId();
         Game game = gameRepository.getGameById(lobbyId);
-        Board board = game.getBoard();
         Pawn pawn = message.getPawn();
         Player player = game.getPlayerById(message.getId());
 
         if (game.movePawn(player, pawn, message.getPosition())) {
-            for (Player p : game.getPlayerSet()
-            ) {
+            game.getPlayerSet().forEach(p -> {
                 GameResponse response = new GameResponse(
                         Operation.MOVE_PAWN,
                         p.getId(),
                         lobbyId,
-                        board.getPawnsForColor(p.getColor()),
-                        board.getDefeatedPawnsByColor(p.getColor()),
+                        game.getPawnsByColor(p.getColor()),
+                        game.getDefeatedPawnsByColor(p.getColor()),
                         game.getTurn()
                 );
                 messagingTemplate.convertAndSend(destination, response);
+            });
+            if (game.isOver()) {
+                game.revealAll();
+                game.getPlayerSet().forEach(p -> {
+                    EndGameResponse response = new EndGameResponse(
+                            Operation.GAME_OVER,
+                            p.getId(),
+                            lobbyId,
+                            game.getWinner(),
+                            game.getPawnsByColor(p.getColor())
+                    );
+                    messagingTemplate.convertAndSend(destination, response);
+                });
             }
+        } else {
+            messagingTemplate.convertAndSend(destination, new ErrorResponse("Not a valid move!"));
         }
-        messagingTemplate.convertAndSend(destination, new ErrorResponse("Not a valid move!"));
+
     }
 
     @MessageMapping("/game/moves")
@@ -66,8 +79,8 @@ public class GameController {
                         Operation.POSSIBLE_MOVES,
                         message.getId(),
                         message.getLobbyId(),
-                        game.getBoard().getPossibleMoves(pawn),
-                        game.getBoard().getPossibleAttacks(pawn)
+                        game.getPossibleMoves(pawn),
+                        game.getPossibleAttacks(pawn)
                 );
             }
             return null;
@@ -98,8 +111,8 @@ public class GameController {
                         Operation.START_GAME,
                         p.getId(),
                         lobbyId,
-                        game.getBoard().getPawnsForColor(p.getColor()),
-                        game.getBoard().getDefeatedPawnsByColor(p.getColor()),
+                        game.getPawnsByColor(p.getColor()),
+                        game.getDefeatedPawnsByColor(p.getColor()),
                         game.getTurn()
                 );
                 messagingTemplate.convertAndSend(destination, responseMessage);
@@ -134,7 +147,7 @@ public class GameController {
                 opponent,
                 message.getLobbyId(),
                 Board.getStandardPawns(player.getColor()),
-                game.getBoard().getField()
+                game.getField()
         );
     }
 }

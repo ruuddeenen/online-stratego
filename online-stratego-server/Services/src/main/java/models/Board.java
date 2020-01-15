@@ -10,10 +10,19 @@ public class Board {
     private boolean[][] field = standardField;
     private List<Pawn> pawnList;
     private List<Pawn> defeatedPawns;
+    private Color winner = null;
 
     public Board() {
         this.pawnList = new ArrayList<>();
         this.defeatedPawns = new ArrayList<>();
+    }
+
+    void revealAll(){
+        pawnList.forEach(Pawn::reveal);
+    }
+
+    public Color getWinningColor(){
+        return winner;
     }
 
     public List<Pawn> getDefeatedPawnsByColor(Color color) {
@@ -78,6 +87,8 @@ public class Board {
 
     private void battle(Pawn pawn, Pawn defender) {
         switch (pawn.attack(defender)) {
+            case GAME_WON:
+                winner = pawn.getColor();
             case WON:
                 pawn.reveal();
                 defeatedPawns.add(defender);
@@ -93,9 +104,6 @@ public class Board {
                 defender.reveal();
                 defeatedPawns.add(pawn);
                 pawnList.remove(pawn);
-                break;
-            case GAME_WON:
-                // todo
                 break;
         }
     }

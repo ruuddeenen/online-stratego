@@ -1,7 +1,6 @@
 package service;
 
 public enum Operation {
-    CONNECT,
     JOINED_LOBBY,
     NEW_LOBBY,
     OPEN_GAME,
@@ -9,5 +8,6 @@ public enum Operation {
     START_GAME,
     POSSIBLE_MOVES,
     MOVE_PAWN,
-    NOT_YOUR_TURN
+    NOT_YOUR_TURN,
+    GAME_OVER
 }

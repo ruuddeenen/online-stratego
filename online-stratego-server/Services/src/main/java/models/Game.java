@@ -1,8 +1,11 @@
 package models;
 
+import models.pawns.Flag;
 import models.pawns.Pawn;
 import models.enums.Color;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,13 +14,11 @@ public class Game {
     private Board board;
     private Set<Player> playerSet;
     private Color turn;
-    private GameLogger gameHistory;
 
     public Game() {
         this.board = new Board();
         this.playerSet = new HashSet<>();
         this.turn = Color.RED;
-        this.gameHistory = new GameLogger();
     }
 
     public void addPlayer(Player player) {
@@ -38,10 +39,6 @@ public class Game {
 
     public Set<Player> getPlayerSet() {
         return playerSet;
-    }
-
-    public Board getBoard() {
-        return board;
     }
 
     public Color getTurn() {
@@ -66,22 +63,57 @@ public class Game {
         return null;
     }
 
+    private Player getPlayerByColor(Color color){
+        for (Player p : playerSet
+        ) {
+            if (p.getColor().equals(color)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
     public boolean movePawn(Player player, Pawn pawn, Position newPosition) {
         if (turn != player.getColor() || !board.movePawn(pawn.getPosition(), newPosition) || pawn.getColor() != player.getColor()) {
             return false;
         }
-
-        gameHistory.move(
-                player,
-                pawn,
-                pawn.getPosition(),
-                newPosition
-        );
         toggleTurn();
         return true;
     }
 
     public boolean isTurn(Player player) {
         return player.getColor() == turn;
+    }
+
+    public boolean isOver(){
+        return board.getWinningColor() != null;
+    }
+
+    public Player getWinner(){
+        return getPlayerByColor(board.getWinningColor());
+    }
+
+    public boolean[][] getField(){
+        return board.getField();
+    }
+
+    public List<Pawn> getPawnsByColor(Color color){
+        return board.getPawnsForColor(color);
+    }
+
+    public List<Pawn> getDefeatedPawnsByColor(Color color){
+        return board.getDefeatedPawnsByColor(color);
+    }
+
+    public List<Position> getPossibleMoves(Pawn pawn){
+        return board.getPossibleMoves(pawn);
+    }
+
+    public List<Position> getPossibleAttacks(Pawn pawn){
+        return board.getPossibleAttacks(pawn);
+    }
+
+    public void revealAll(){
+        board.revealAll();
     }
 }

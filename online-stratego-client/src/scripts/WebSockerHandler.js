@@ -3,7 +3,7 @@ import * as Stomp from "@stomp/stompjs";
 import { GameConnectMessage } from '../models/MessageModels';
 
 const stompClient = null
-const wsUrl = 'http://localhost:9090/ws';
+const wsUrl = 'http://192.168.0.25:9090/ws';
 export class WebSocketHandler {
 
     connect(user, lobbyId) {
