@@ -1,4 +1,4 @@
-package service;
+package service.messages;
 
 public enum Operation {
     JOINED_LOBBY,

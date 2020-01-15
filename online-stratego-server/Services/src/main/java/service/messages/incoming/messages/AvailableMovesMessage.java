@@ -1,7 +1,7 @@
-package service.messages.incoming;
+package service.messages.incoming.messages;
 
 import models.pawns.Pawn;
-import service.messages.interfaces.IAvailableMovesMessage;
+import service.messages.incoming.interfaces.IAvailableMovesMessage;
 
 public class AvailableMovesMessage extends Message implements IAvailableMovesMessage{
     private Pawn pawn;

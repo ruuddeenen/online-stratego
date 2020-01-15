@@ -276,7 +276,7 @@ class Game extends Component {
                 username: this.state.user.username,
                 color: this.state.color
             },
-            this.state.lobbyId,
+            this.state.lobb yId,
             this.state.selectedPawn,
             { x: x, y: y }
         ));

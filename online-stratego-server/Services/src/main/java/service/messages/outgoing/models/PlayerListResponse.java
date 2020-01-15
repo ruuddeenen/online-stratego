@@ -1,14 +1,15 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
 import models.Player;
-import service.Operation;
+import service.messages.Operation;
+import service.messages.outgoing.interfaces.IPlayerListResponse;
 
 import java.util.List;
 
-public class LobbyResponse extends Response {
+public class PlayerListResponse extends Response implements IPlayerListResponse {
     private List<Player> playerList;
 
-    public LobbyResponse(Operation operation, String sender, String lobbyId, List<Player> playerList) {
+    public PlayerListResponse(Operation operation, String sender, String lobbyId, List<Player> playerList) {
         super(operation, sender, lobbyId);
         this.playerList = playerList;
     }

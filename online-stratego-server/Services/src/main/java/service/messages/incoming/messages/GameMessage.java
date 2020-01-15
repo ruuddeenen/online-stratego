@@ -1,7 +1,7 @@
-package service.messages.incoming;
+package service.messages.incoming.messages;
 
 import models.pawns.Pawn;
-import service.messages.interfaces.IGameMessage;
+import service.messages.incoming.interfaces.IGameMessage;
 
 import java.util.List;
 

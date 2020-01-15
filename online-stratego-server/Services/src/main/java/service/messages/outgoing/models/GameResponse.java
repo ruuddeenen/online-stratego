@@ -1,12 +1,13 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
 import models.pawns.Pawn;
 import models.enums.Color;
-import service.Operation;
+import service.messages.Operation;
+import service.messages.outgoing.interfaces.IGameResponse;
 
 import java.util.List;
 
-public class GameResponse extends Response {
+public class GameResponse extends Response implements IGameResponse {
     private List<Pawn> pawnList;
     private Color turn;
     private List<Pawn> defeatedPawnList;

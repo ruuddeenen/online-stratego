@@ -8,12 +8,12 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
-import service.Operation;
-import service.messages.incoming.AvailableMovesMessage;
-import service.messages.incoming.GameMessage;
-import service.messages.incoming.Message;
-import service.messages.incoming.MoveMessage;
-import service.messages.responses.*;
+import service.messages.Operation;
+import service.messages.incoming.messages.AvailableMovesMessage;
+import service.messages.incoming.messages.GameMessage;
+import service.messages.incoming.messages.Message;
+import service.messages.incoming.messages.MoveMessage;
+import service.messages.outgoing.models.*;
 
 import java.util.*;
 

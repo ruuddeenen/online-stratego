@@ -1,7 +1,7 @@
-package service.messages.incoming;
+package service.messages.incoming.messages;
 
 import models.Player;
-import service.messages.interfaces.Messegeable;
+import service.messages.incoming.interfaces.Messegeable;
 
 public class Message implements Messegeable {
     private Player player;

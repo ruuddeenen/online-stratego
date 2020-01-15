@@ -1,12 +1,13 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
 import models.pawns.Pawn;
 import models.Player;
-import service.Operation;
+import service.messages.Operation;
+import service.messages.outgoing.interfaces.IGameStartResponse;
 
 import java.util.List;
 
-public class GameStartResponse extends Response {
+public class GameStartResponse extends Response implements IGameStartResponse {
     private List<Pawn> pawnList;
     private boolean[][] fields;
     private Player opponent;

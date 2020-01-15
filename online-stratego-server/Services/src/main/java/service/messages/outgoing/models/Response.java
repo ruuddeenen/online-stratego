@@ -1,8 +1,8 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
-import service.Operation;
+import service.messages.Operation;
 
-import service.messages.interfaces.IResponse;
+import service.messages.outgoing.interfaces.IResponse;
 
 public abstract class Response implements IResponse {
     private Operation operation;

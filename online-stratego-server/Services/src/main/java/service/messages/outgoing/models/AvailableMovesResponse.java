@@ -1,13 +1,14 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
 import models.Position;
-import service.Operation;
+import service.messages.Operation;
+import service.messages.outgoing.interfaces.IAvailableMovesResponse;
 
 import java.util.List;
 
-public class AvailableMovesResponse extends Response {
-    List<Position> moves;
-    List<Position> attacks;
+public class AvailableMovesResponse extends Response implements IAvailableMovesResponse {
+    private List<Position> moves;
+    private List<Position> attacks;
 
     public List<Position> getMoves() {
         return moves;

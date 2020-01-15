@@ -1,4 +1,4 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
 public class ErrorResponse extends Response {
     private String message;

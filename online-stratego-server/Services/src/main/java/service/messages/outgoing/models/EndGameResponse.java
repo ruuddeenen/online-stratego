@@ -1,12 +1,13 @@
-package service.messages.responses;
+package service.messages.outgoing.models;
 
 import models.Player;
 import models.pawns.Pawn;
-import service.Operation;
+import service.messages.Operation;
+import service.messages.outgoing.interfaces.IEndGameResponse;
 
 import java.util.List;
 
-public class EndGameResponse extends Response {
+public class EndGameResponse extends Response implements IEndGameResponse {
     public Player getWinner() {
         return winner;
     }

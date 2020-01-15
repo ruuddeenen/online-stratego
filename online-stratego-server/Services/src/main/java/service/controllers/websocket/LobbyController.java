@@ -5,12 +5,12 @@ import models.Player;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
-import service.Operation;
-import service.messages.incoming.GameStartMessage;
-import service.messages.incoming.Message;
-import service.messages.responses.ErrorResponse;
-import service.messages.responses.LobbyResponse;
-import service.messages.responses.Response;
+import service.messages.Operation;
+import service.messages.incoming.messages.GameStartMessage;
+import service.messages.incoming.messages.Message;
+import service.messages.outgoing.models.ErrorResponse;
+import service.messages.outgoing.models.PlayerListResponse;
+import service.messages.outgoing.models.Response;
 
 import java.util.*;
 
@@ -22,7 +22,7 @@ public class LobbyController {
     @MessageMapping("/lobby/startgame")
     @SendTo("/topic/lobby")
     public Response startGame(GameStartMessage message) {
-        return new LobbyResponse(
+        return new PlayerListResponse(
                 Operation.OPEN_GAME,
                 null,
                 message.getLobbyId(),
@@ -67,9 +67,9 @@ public class LobbyController {
             return new ErrorResponse("Lobby is full! Could not join");
     }
 
-    private LobbyResponse createLobbyResponse(Operation operation, Player player, String lobbyId) {
+    private PlayerListResponse createLobbyResponse(Operation operation, Player player, String lobbyId) {
         List<Player> playerList = gameRepository.getPlayersFromLobby(lobbyId);
-        return new LobbyResponse(
+        return new PlayerListResponse(
                 operation,
                 player.getId(),
                 lobbyId,

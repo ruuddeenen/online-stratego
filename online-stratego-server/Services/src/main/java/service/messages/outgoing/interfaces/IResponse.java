@@ -1,6 +1,6 @@
-package service.messages.interfaces;
+package service.messages.outgoing.interfaces;
 
-import service.Operation;
+import service.messages.Operation;
 
 public interface IResponse {
     Operation getOperation();
