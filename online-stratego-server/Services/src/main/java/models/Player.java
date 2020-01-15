@@ -18,9 +18,9 @@ public class Player {
         this.username = username;
     }
 
-    public Player(String id, String username, models.enums.Color color){
+    public Player(String id, String username, Color color){
         this(id, username);
-        setColor(color);
+        this.color = color;
     }
 
     public String getId() {

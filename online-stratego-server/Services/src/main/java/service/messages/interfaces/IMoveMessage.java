@@ -1,10 +1,8 @@
 package service.messages.interfaces;
 
-import models.pawns.Pawn;
+import models.Position;
 
-public interface IMoveMessage extends ILobbyMessage {
-    void setId(String id);
-    String getId();
-    void setPawn(Pawn pawn);
-    Pawn getPawn();
+public interface IMoveMessage extends IAvailableMovesMessage {
+    Position getPosition();
+    void setPosition(Position position);
 }

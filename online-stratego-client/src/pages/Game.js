@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
-import { GameConnectMessage, ReadyUpMessage, GetAvailableMovesMessage, MoveMessage } from '../models/MessageModels';
+import { GameConnectMessage, ReadyUpMessage, GetAvailableMovesMessage, MoveMessage, ConnectMessage, Message, GameMessage, AvailableMovesMessage } from '../models/MessageModels';
 import Bomb from '../images/pawns/stratego-bomb.webp';
 import Captain from '../images/pawns/stratego-captain.webp';
 import Colonel from '../images/pawns/stratego-colonel.webp';
@@ -30,8 +30,9 @@ const canvasDimensions = {
     }
 };
 
-let stompClient = null;
 let canvasHandler = null;
+let stompClient = null;
+const wsUrl = 'http://localhost:9090/ws'
 
 class Game extends Component {
     constructor(props) {
@@ -64,6 +65,7 @@ class Game extends Component {
             document.getElementById('canvasOverlay')
         );
 
+
         this.getSessionStorage();
         this.connect();
 
@@ -71,6 +73,7 @@ class Game extends Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
+        console.log(this.state, 'state update');
         if (this.state.board !== prevState.board) {
             canvasHandler.setBoard(this.state.board);
             canvasHandler.drawStrategoBoard(true);
@@ -81,7 +84,30 @@ class Game extends Component {
             });
             canvasHandler.drawPawns(this.state.pawns, this.state.color);
         }
-        console.log(this.state, 'state update');
+    }
+
+    connect = () => {
+        const that = this;
+        stompClient = Stomp.Stomp.over(new SockJS(wsUrl));
+        stompClient.connect({}, function (frame) {
+            console.log(frame.toString());
+            stompClient.subscribe('/topic/game', (msg) => {
+                that.onMessageRecieved(msg);
+            });
+            that.sendMessage('/app/game', new Message(
+                {
+                    id: that.state.user.id,
+                    username: that.state.user.username,
+                    color: that.state.color
+                },
+                that.state.lobbyId
+            ));
+        })
+    }
+
+    sendMessage = (endPoint, message) => {
+        stompClient.send(endPoint, {}, JSON.stringify(message));
+        console.log(message, 'SEND');
     }
 
     getPawnCountLeftToPlace(pawnArray, name) {
@@ -113,23 +139,6 @@ class Game extends Component {
             user: JSON.parse(sessionStorage.getItem('user')),
             lobbyId: sessionStorage.getItem('lobbyId'),
             color: sessionStorage.getItem('color')
-        });
-    }
-
-    connect = () => {
-        const _this = this;
-        const socket = new SockJS('http://localhost:9090/ws');
-        stompClient = Stomp.Stomp.over(socket);
-        stompClient.connect({}, function () {
-            stompClient.subscribe('/topic/game', (message) => {
-                _this.onMessageRecieved(message);
-            });
-            _this.sendMessage('/app/game', new GameConnectMessage(
-                _this.state.user.id,
-                _this.state.user.username,
-                _this.state.lobbyId,
-                _this.state.color
-            ));
         });
     }
 
@@ -188,6 +197,12 @@ class Game extends Component {
                     case 'NOT_YOUR_TURN':
                         window.alert(message.message);
                         break;
+                    case 'GAME_OVER':
+                        window.alert('Winner: ' + message.winner.username);
+                        this.setState({
+                            pawns: message.pawnList
+                        });
+                        break;
                     default:
                         break;
 
@@ -196,14 +211,13 @@ class Game extends Component {
         }
     }
 
-    sendMessage = (endPoint, message) => {
-        stompClient.send(endPoint, {}, JSON.stringify(message));
-        console.log(message, 'SEND');
-    }
-
     handleReadyUp = () => {
-        this.sendMessage('/app/game/ready', new ReadyUpMessage(
-            this.state.user.id,
+        this.sendMessage('/app/game/ready', new GameMessage(
+            {
+                id: this.state.user.id,
+                username: this.state.username,
+                color: this.state.color
+            },
             this.state.lobbyId,
             this.state.pawns
         ));
@@ -252,43 +266,16 @@ class Game extends Component {
             } else if (this.state.selectedPawn === null) {
                 return;
             }
-            /*
-            if (this.getPawnOnPosition(x, y) === null) {
-                console.log(this.state.selectedItem)
-                if (this.state.selectedPawn !== null && this.state.selectedPawn !== '') {
-                    this.sendMessage('/app/game/move', new MoveMessage(
-                        this.state.user.id,
-                        this.state.lobbyId,
-                        this.state.selectedPawn,
-                        { x: x, y: y }
-                    ));
-                }
-
-            } else {
-                const pawn = this.getPawnOnPosition(x, y);
-                if (pawn.color === this.state.color) {
-                    this.setState({
-                        selectedPawn: pawn
-                    })
-                    this.getPawnMoves(pawn);
-                } else {
-                    if (this.state.selectedPawn !== null && this.state.selectedPawn !== '') {
-                        this.sendMessage('/app/game/move', new MoveMessage(
-                            this.state.user.id,
-                            this.state.lobbyId,
-                            this.state.selectedPawn,
-                            { x: x, y: y }
-                        ));
-                    }
-                }
-            }
-            */
         }
     }
 
     movePawn(x, y) {
         this.sendMessage('/app/game/move', new MoveMessage(
-            this.state.user.id,
+            {
+                id: this.state.user.id,
+                username: this.state.user.username,
+                color: this.state.color
+            },
             this.state.lobbyId,
             this.state.selectedPawn,
             { x: x, y: y }
@@ -298,8 +285,12 @@ class Game extends Component {
 
 
     getPawnMoves(pawn) {
-        this.sendMessage('/app/game/moves', new GetAvailableMovesMessage(
-            this.state.user.id,
+        this.sendMessage('/app/game/moves', new AvailableMovesMessage(
+            {
+                id: this.state.user.id,
+                username: this.state.user.username,
+                color: this.state.color
+            },
             this.state.lobbyId,
             pawn
         ));
@@ -421,6 +412,7 @@ class Game extends Component {
     }
 
     getPawnsLeftToPlace(pawnArray) {
+        console.log(pawnArray, 'pawnArray')
         const arr = [
             this.getPawnCountLeftToPlace(pawnArray, 'Flag'),
             this.getPawnCountLeftToPlace(pawnArray, 'Spy'),

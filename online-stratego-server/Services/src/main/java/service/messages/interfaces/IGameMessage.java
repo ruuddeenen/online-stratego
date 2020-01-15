@@ -4,9 +4,7 @@ import models.pawns.Pawn;
 
 import java.util.List;
 
-public interface IGameMessage extends ILobbyMessage {
-    void setId(String id);
-    String getId();
-    void setPawnList(List<Pawn> pawnLayout);
+public interface IGameMessage {
     List<Pawn> getPawnList();
+    void setPawnList(List<Pawn> pawnList);
 }

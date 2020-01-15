@@ -1,28 +1,21 @@
 package service.messages.incoming;
 
 import models.Player;
-import service.messages.interfaces.IPlayerMessage;
+import service.messages.interfaces.IGameStartMessage;
 
 import java.util.List;
 
-public class GameStartMessage implements IPlayerMessage {
-    private String lobbyId;
-    private List<Player> playerList;
+public class GameStartMessage extends Message implements IGameStartMessage {
 
-    public String getLobbyId() {
-        return lobbyId;
-    }
-
-    public void setLobbyId(String lobbyId) {
-        this.lobbyId = lobbyId;
-    }
-
+    @Override
     public List<Player> getPlayerList() {
         return playerList;
     }
 
+    @Override
     public void setPlayerList(List<Player> playerList) {
         this.playerList = playerList;
     }
 
+    private List<Player> playerList;
 }

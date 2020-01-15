@@ -2,17 +2,16 @@ package service.messages.interfaces;
 
 import service.Operation;
 
-public interface IResponse extends ILobbyMessage {
-    void setOperation(Operation operation);
-
+public interface IResponse {
     Operation getOperation();
 
-    void setReceiver(String receiver);
+    void setOperation(Operation operation);
 
     String getReceiver();
 
-    void setLobbyId(String lobbyId);
+    void setReceiver(String receiver);
 
     String getLobbyId();
 
+    void setLobbyId(String lobbyId);
 }

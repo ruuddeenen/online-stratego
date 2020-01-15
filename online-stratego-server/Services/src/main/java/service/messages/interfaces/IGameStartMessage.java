@@ -4,7 +4,7 @@ import models.Player;
 
 import java.util.List;
 
-public interface IPlayerMessage extends ILobbyMessage {
+public interface IGameStartMessage {
     List<Player> getPlayerList();
     void setPlayerList(List<Player> playerList);
 }

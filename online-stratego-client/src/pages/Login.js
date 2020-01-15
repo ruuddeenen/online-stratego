@@ -41,7 +41,7 @@ class Login extends Component {
         const username = this.state.username;
         const password = this.state.password;
         const url = createUrlToRestApi('login', ['username', 'password'], [username, password]);
-
+        console.log(url)
         fetch(url)
             .then(res => res.json())
             .then((data) => {

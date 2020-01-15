@@ -24,7 +24,7 @@ public class GameRepository {
         return gameMap.getOrDefault(id, null);
     }
 
-    public Game createNewGame(String id) {
+    private Game createNewGame(String id) {
         gameMap.put(id, new Game());
         return gameMap.get(id);
     }
@@ -72,9 +72,9 @@ public class GameRepository {
         return null;
     }
 
-    public Player addPlayer(String id, String username){
-        playerSet.add(new Player(id, username));
-        return getPlayerById(id);
+    public Player addPlayer(Player player){
+        playerSet.add(player);
+        return getPlayerById(player.getId());
     }
 
     public boolean isLobbyFull(String id){

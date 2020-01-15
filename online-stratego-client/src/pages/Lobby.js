@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
+import { Button } from 'react-bootstrap';
+import { GameStartMessage, Message } from '../models/MessageModels';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
-import { Button } from 'react-bootstrap';
-import { ConnectMessage, GameStartMessage } from '../models/MessageModels';
 
+const wsUrl = 'http://localhost:9090/ws';
 let stompClient = null;
 
 class Lobby extends Component {
@@ -28,7 +29,8 @@ class Lobby extends Component {
         this.connect();
     }
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
+    componentDidUpdate(){
+        console.log(this.state)
     }
 
     getSessionStorage() {
@@ -38,22 +40,27 @@ class Lobby extends Component {
         });
     }
 
-    connect() {
-        let _this = this;
-        const socket = new SockJS('http://localhost:9090/ws');
-        stompClient = Stomp.Stomp.over(socket);
+    connect = () => {
+        const that = this;
+        stompClient = Stomp.Stomp.over(new SockJS(wsUrl));
         stompClient.connect({}, function (frame) {
             console.log(frame.toString());
-            stompClient.subscribe('/topic/lobby', (message) => {
-                _this.onMessageRecieved(message);
+            stompClient.subscribe('/topic/lobby', (msg) => {
+                that.onMessageRecieved(msg);
             });
-            _this.sendMessage('/app/lobby', new ConnectMessage(
-                _this.state.user.id,
-                _this.state.user.username,
-                _this.state.lobbyId
-            ))
-        });
+            that.sendMessage('/app/lobby', new Message(
+                {
+                    id: that.state.user.id,
+                    username: that.state.user.username
+                },
+                that.state.lobbyId
+            ));
+        })
+    }
 
+    sendMessage = (endPoint, message) => {
+        stompClient.send(endPoint, {}, JSON.stringify(message));
+        console.log(message, 'SEND');
     }
 
     onMessageRecieved(msg) {
@@ -66,7 +73,6 @@ class Lobby extends Component {
                     lobbyId: message.lobbyId,
                     playerList: message.playerList
                 });
-
                 sessionStorage.setItem('lobbyId', this.state.lobbyId);
             }
         }
@@ -82,7 +88,7 @@ class Lobby extends Component {
                         sessionStorage.setItem('color', player.color);
                     }
                 });
-                if (this.state.playerList.size === 2){
+                if (this.state.playerList.size === 2) {
                     this.setState({
                         buttonDisabled: false
                     })
@@ -93,18 +99,17 @@ class Lobby extends Component {
         }
     }
 
-    sendMessage = (endPoint, message) => {
-        stompClient.send(endPoint, {}, JSON.stringify(message));
-        console.log(message, 'SEND');
-    }
-
     startGame = () => {
-        if (this.state.playerList.length !== 2){
+        if (this.state.playerList.length !== 2) {
             window.alert('2 Players are needed for a game!');
             return;
         }
         console.log('start game', this);
         this.sendMessage('/app/lobby/startgame', new GameStartMessage(
+            {
+                id: this.state.user.id,
+                username: this.state.user.username
+            },
             this.state.lobbyId,
             this.state.playerList
         ));

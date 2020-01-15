@@ -1,6 +1,7 @@
 package service.messages.responses;
 
 import service.Operation;
+
 import service.messages.interfaces.IResponse;
 
 public abstract class Response implements IResponse {

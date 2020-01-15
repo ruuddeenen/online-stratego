@@ -9,10 +9,10 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 import service.Operation;
-import service.messages.incoming.GameConnectMessage;
-import service.messages.incoming.GetAvailableMovesMessage;
-import service.messages.incoming.MoveMessage;
+import service.messages.incoming.AvailableMovesMessage;
 import service.messages.incoming.GameMessage;
+import service.messages.incoming.Message;
+import service.messages.incoming.MoveMessage;
 import service.messages.responses.*;
 
 import java.util.*;
@@ -33,7 +33,7 @@ public class GameController {
         String lobbyId = message.getLobbyId();
         Game game = gameRepository.getGameById(lobbyId);
         Pawn pawn = message.getPawn();
-        Player player = game.getPlayerById(message.getId());
+        Player player = game.getPlayerById(message.getPlayer().getId());
 
         if (game.movePawn(player, pawn, message.getPosition())) {
             game.getPlayerSet().forEach(p -> {
@@ -68,16 +68,16 @@ public class GameController {
 
     @MessageMapping("/game/moves")
     @SendTo("/topic/game")
-    public Response getMoves(GetAvailableMovesMessage message) {
+    public Response getMoves(AvailableMovesMessage message) {
         String lobbyId = message.getLobbyId();
         Pawn pawn = message.getPawn();
         Game game = gameRepository.getGameById(lobbyId);
-        Player player = game.getPlayerById(message.getId());
+        Player player = game.getPlayerById(message.getPlayer().getId());
         if (game.isTurn(player)) {
-            if (game.getPlayerById(message.getId()).getColor() == pawn.getColor()) {
+            if (player.getColor() == pawn.getColor()) {
                 return new AvailableMovesResponse(
                         Operation.POSSIBLE_MOVES,
-                        message.getId(),
+                        player.getId(),
                         message.getLobbyId(),
                         game.getPossibleMoves(pawn),
                         game.getPossibleAttacks(pawn)
@@ -88,7 +88,7 @@ public class GameController {
         Response response = new ErrorResponse("Trying to move while not your turn.");
         response.setOperation(Operation.NOT_YOUR_TURN);
         response.setLobbyId(message.getLobbyId());
-        response.setReceiver(message.getId());
+        response.setReceiver(message.getPlayer().getId());
         return response;
     }
 
@@ -98,7 +98,7 @@ public class GameController {
     public void readyUp(GameMessage message) {
         String lobbyId = message.getLobbyId();
         Game game = gameRepository.getGameById(lobbyId);
-        Player player = game.getPlayerById(message.getId());
+        Player player = game.getPlayerById(message.getPlayer().getId());
         Color color = player.getColor();
 
         List<Pawn> pawnList = message.getPawnList();
@@ -122,7 +122,7 @@ public class GameController {
 
     @MessageMapping("/game")
     @SendTo("/topic/game")
-    public Response connect(GameConnectMessage message) {
+    public Response connect(Message message) {
         String lobbyId = message.getLobbyId();
         Game game = gameRepository.getOrCreateGame(lobbyId);
 
@@ -132,7 +132,7 @@ public class GameController {
         Player opponent = null;
         for (Player p : players
         ) {
-            if (p.getId().equals(message.getId())) {
+            if (p.getId().equals(message.getPlayer().getId())) {
                 player = p;
             } else {
                 opponent = p;

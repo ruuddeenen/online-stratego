@@ -7,10 +7,10 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import service.Operation;
 import service.messages.incoming.GameStartMessage;
+import service.messages.incoming.Message;
 import service.messages.responses.ErrorResponse;
 import service.messages.responses.LobbyResponse;
 import service.messages.responses.Response;
-import service.messages.incoming.ConnectMessage;
 
 import java.util.*;
 
@@ -32,10 +32,10 @@ public class LobbyController {
 
     @MessageMapping("/lobby")
     @SendTo("/topic/lobby")
-    public Response connect(ConnectMessage message) {
-        gameRepository.addPlayer(message.getId(), message.getUsername());
+    public Response connect(Message message) {
+        gameRepository.addPlayer(message.getPlayer());
         if (message.getLobbyId().isBlank()) {        // New lobby
-            Player player = gameRepository.getPlayerById(message.getId());
+            Player player = gameRepository.getPlayerById(message.getPlayer().getId());
             player.setColor(null);
 
             String lobbyId = gameRepository.createLobby();
@@ -47,14 +47,13 @@ public class LobbyController {
     }
 
 
-    private Response joinLobby(ConnectMessage message) {
-        String playerId = message.getId();
-        String username = message.getUsername();
+    private Response joinLobby(Message message) {
+        String playerId = message.getPlayer().getId();
         String lobbyId = message.getLobbyId();
 
         Player player = gameRepository.getPlayerById(playerId);
         if (player == null) {
-            player = gameRepository.addPlayer(playerId, username);
+            player = gameRepository.addPlayer(message.getPlayer());
         }
 
         List<Player> playersInLobby = gameRepository.getPlayersFromLobby(lobbyId);
@@ -69,11 +68,12 @@ public class LobbyController {
     }
 
     private LobbyResponse createLobbyResponse(Operation operation, Player player, String lobbyId) {
+        List<Player> playerList = gameRepository.getPlayersFromLobby(lobbyId);
         return new LobbyResponse(
                 operation,
                 player.getId(),
                 lobbyId,
-                gameRepository.getPlayersFromLobby(lobbyId)
+                playerList
         );
     }
 }
