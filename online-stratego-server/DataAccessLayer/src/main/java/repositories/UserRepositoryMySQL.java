@@ -30,7 +30,7 @@ public class UserRepositoryMySQL implements IUserRepository {
             preparedStatement.execute();
             return login(username, password);
         } catch (SQLException | IOException e) {
-            logger.log(Level.SEVERE, null, e);
+            logger.log(Level.WARNING, null, e);
             UserResponse response = new UserResponse();
             response.setMessage(e.getMessage());
             return response;

@@ -66,4 +66,14 @@ class GameRepositoryTest {
         repo.addPlayer(player);
         assertEquals(player, repo.getPlayerById(player.getId()));
     }
+
+    @Test
+    void test_removePlayerFromLobby(){
+        String lobbyId = repo.createLobby();
+        repo.addPlayerToLobby(lobbyId, player);
+        assertEquals(1, repo.getPlayersFromLobby(lobbyId).size());
+        repo.removePlayerFromLobby(lobbyId, player.getId());
+
+        assertEquals(0, repo.getPlayersFromLobby(lobbyId).size());
+    }
 }

@@ -9,5 +9,6 @@ public enum Operation {
     POSSIBLE_MOVES,
     MOVE_PAWN,
     NOT_YOUR_TURN,
-    GAME_OVER
+    GAME_OVER,
+    LOBBY_FULL;
 }

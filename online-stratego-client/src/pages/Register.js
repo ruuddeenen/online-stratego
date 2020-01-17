@@ -60,10 +60,10 @@ class Register extends Component {
             .then(res => res.json())
             .then((data) => {
                 console.log(data, 'data');
-                if (data.id !== 'null' || data.username !== 'null') {
+                if (data.message === null) {
                     window.location = '/';
                 } else {
-                    window.alert('Could not create account! Unkown error.');
+                    window.alert('Account with this username does already exist');
                 }
             });
     }

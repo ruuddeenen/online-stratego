@@ -57,7 +57,6 @@ public class LobbyController {
         }
     }
 
-
     private Response joinLobby(Message message) {
         String playerId = message.getPlayer().getId();
         String lobbyId = message.getLobbyId();
@@ -74,8 +73,11 @@ public class LobbyController {
         } else if (!gameRepository.isLobbyFull(lobbyId)) {                          // If player can be added to lobby
             gameRepository.addPlayerToLobby(lobbyId, player);
             return createLobbyResponse(Operation.JOINED_LOBBY, player, lobbyId);
-        } else                                                                      // If lobby is full
-            return new ErrorResponse("Lobby is full! Could not join", message.getPlayer().getId());
+        } else     {
+            ErrorResponse response = new ErrorResponse("Lobby is full! Could not join", message.getPlayer().getId());// If lobby is full
+            response.setOperation(Operation.LOBBY_FULL);
+            return response;
+        }
     }
 
     private PlayerListResponse createLobbyResponse(Operation operation, Player player, String lobbyId) {

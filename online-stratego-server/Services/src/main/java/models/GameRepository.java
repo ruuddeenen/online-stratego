@@ -47,6 +47,34 @@ public class GameRepository {
         return lobbyId;
     }
 
+    public void removePlayerFromLobby(String lobbyId, String playerId){
+        List<Player> playerList = lobbyPlayerMap.get(lobbyId);
+        Player toBeRemoved = null;
+        for (Player p: playerList
+             ) {
+            if (p.getId().equals(playerId)){
+                toBeRemoved = p;
+            }
+        }
+        if (toBeRemoved != null){
+            playerList.remove(toBeRemoved);
+        }
+    }
+
+    public void removePlayerFromGame(Game game, String playerId){
+        Set<Player> playerList = game.getPlayerSet();
+        Player toBeRemoved = null;
+        for (Player p: playerList
+        ) {
+            if (p.getId().equals(playerId)){
+                toBeRemoved = p;
+            }
+        }
+        if (toBeRemoved != null){
+            playerList.remove(toBeRemoved);
+        }
+    }
+
     public void addPlayerToLobby(String lobbyId, Player player){
         if (isLobbyFull(lobbyId)){
             return;
