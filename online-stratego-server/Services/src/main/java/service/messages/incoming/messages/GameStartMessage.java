@@ -1,11 +1,11 @@
 package service.messages.incoming.messages;
 
 import models.Player;
-import service.messages.incoming.interfaces.IGameStartMessage;
+import service.messages.both.IPlayerList;
 
 import java.util.List;
 
-public class GameStartMessage extends Message implements IGameStartMessage {
+public class GameStartMessage extends Message implements IPlayerList {
 
     @Override
     public List<Player> getPlayerList() {

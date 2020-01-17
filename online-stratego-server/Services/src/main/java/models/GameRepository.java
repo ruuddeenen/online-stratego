@@ -48,6 +48,9 @@ public class GameRepository {
     }
 
     public void addPlayerToLobby(String lobbyId, Player player){
+        if (isLobbyFull(lobbyId)){
+            return;
+        }
         List<Player> playerList = getPlayersFromLobby(lobbyId);
         if (playerList == null){
             playerList = new ArrayList<>();

@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class UserRepository implements IUserRepository {
-    private static Logger logger = Logger.getLogger(UserRepository.class.getName());
+public class UserRepositoryMySQL implements IUserRepository {
+    private static Logger logger = Logger.getLogger(UserRepositoryMySQL.class.getName());
     @Override
     public UserResponse register(String username, String password) {
         String uuid = UUID.randomUUID().toString();
@@ -31,8 +31,10 @@ public class UserRepository implements IUserRepository {
             return login(username, password);
         } catch (SQLException | IOException e) {
             logger.log(Level.SEVERE, null, e);
+            UserResponse response = new UserResponse();
+            response.setMessage(e.getMessage());
+            return response;
         }
-        return null;
     }
 
     @Override

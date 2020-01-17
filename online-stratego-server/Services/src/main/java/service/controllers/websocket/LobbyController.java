@@ -13,15 +13,22 @@ import service.messages.outgoing.models.PlayerListResponse;
 import service.messages.outgoing.models.Response;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Controller
 public class LobbyController {
     private GameRepository gameRepository = GameRepository.getInstance();
+    private Logger logger = Logger.getLogger(LobbyController.class.getName());
 
 
     @MessageMapping("/lobby/startgame")
     @SendTo("/topic/lobby")
     public Response startGame(GameStartMessage message) {
+        if (message.getLobbyId() == null || message.getLobbyId().isBlank() || message.getPlayerList() == null || message.getPlayerList().size() != 2) {
+            return new ErrorResponse("Not all parameters have been filled correctly", message.getPlayer().getId());
+        }
+
         return new PlayerListResponse(
                 Operation.OPEN_GAME,
                 null,
@@ -33,8 +40,12 @@ public class LobbyController {
     @MessageMapping("/lobby")
     @SendTo("/topic/lobby")
     public Response connect(Message message) {
+        if (message.getPlayer() == null) {
+            logger.log(Level.WARNING, "message.getPlayer() == null", new NullPointerException());
+            return null;
+        }
         gameRepository.addPlayer(message.getPlayer());
-        if (message.getLobbyId().isBlank()) {        // New lobby
+        if (message.getLobbyId() == null || message.getLobbyId().isBlank()) {        // New lobby
             Player player = gameRepository.getPlayerById(message.getPlayer().getId());
             player.setColor(null);
 
@@ -58,13 +69,13 @@ public class LobbyController {
 
         List<Player> playersInLobby = gameRepository.getPlayersFromLobby(lobbyId);
 
-        if (playersInLobby.contains(player)) {                      // If player is already in lobby
+        if (playersInLobby.contains(player)) {                                      // If player is already in lobby
             return createLobbyResponse(Operation.JOINED_LOBBY, player, message.getLobbyId());
-        } else if (!gameRepository.isLobbyFull(lobbyId)) {                     // If player can be added to lobby
+        } else if (!gameRepository.isLobbyFull(lobbyId)) {                          // If player can be added to lobby
             gameRepository.addPlayerToLobby(lobbyId, player);
             return createLobbyResponse(Operation.JOINED_LOBBY, player, lobbyId);
-        } else                                                      // If lobby is full
-            return new ErrorResponse("Lobby is full! Could not join");
+        } else                                                                      // If lobby is full
+            return new ErrorResponse("Lobby is full! Could not join", message.getPlayer().getId());
     }
 
     private PlayerListResponse createLobbyResponse(Operation operation, Player player, String lobbyId) {

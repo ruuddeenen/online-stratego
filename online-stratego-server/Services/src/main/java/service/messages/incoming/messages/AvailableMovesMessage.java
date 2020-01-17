@@ -1,9 +1,9 @@
 package service.messages.incoming.messages;
 
 import models.pawns.Pawn;
-import service.messages.incoming.interfaces.IAvailableMovesMessage;
+import service.messages.incoming.interfaces.IPawnMessage;
 
-public class AvailableMovesMessage extends Message implements IAvailableMovesMessage{
+public class AvailableMovesMessage extends Message implements IPawnMessage {
     private Pawn pawn;
 
     @Override

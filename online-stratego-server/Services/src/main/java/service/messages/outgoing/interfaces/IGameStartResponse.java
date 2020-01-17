@@ -1,11 +1,9 @@
 package service.messages.outgoing.interfaces;
 
 import models.Player;
-import models.pawns.Pawn;
+import service.messages.both.IPawnList;
 
-import java.util.List;
-
-public interface IGameStartResponse extends IPawnListResponse {
+public interface IGameStartResponse extends IPawnList {
     void setFields(boolean[][] fields);
 
     boolean[][] getFields();

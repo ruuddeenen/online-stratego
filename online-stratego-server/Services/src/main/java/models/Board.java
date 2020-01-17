@@ -17,11 +17,11 @@ public class Board {
         this.defeatedPawns = new ArrayList<>();
     }
 
-    void revealAll(){
+    void revealAll() {
         pawnList.forEach(Pawn::reveal);
     }
 
-    public Color getWinningColor(){
+    public Color getWinningColor() {
         return winner;
     }
 
@@ -55,9 +55,7 @@ public class Board {
                 listToRemove.add(pawn);
             }
         });
-        listToRemove.forEach(pawn -> {
-            pawnList.remove(pawn);
-        });
+        listToRemove.forEach(pawn -> pawnList.remove(pawn));
     }
 
     void addToPawnList(List<Pawn> toBeAdded) {
@@ -159,10 +157,8 @@ public class Board {
         for (int x = 0; x < field.length; x++) {
             for (int y = 0; y < field.length; y++) {
                 Position pos = new Position(x, y);
-                if (pawnCanMoveTo(pawn, pos)) {
-                    if (getPawnOnPosition(pos) == null) {
-                        possiblePositions.add(pos);
-                    }
+                if (pawnCanMoveTo(pawn, pos) && getPawnOnPosition(pos) == null) {
+                    possiblePositions.add(pos);
                 }
             }
         }
@@ -176,10 +172,8 @@ public class Board {
                 Position pos = new Position(x, y);
                 if (pawnCanMoveTo(pawn, pos)) {
                     Pawn possiblePawn = getPawnOnPosition(pos);
-                    if (possiblePawn != null) {
-                        if (possiblePawn.getColor() == Color.oppositeOf(pawn.getColor())) {
-                            possiblePositions.add(pos);
-                        }
+                    if (possiblePawn != null && possiblePawn.getColor() == Color.oppositeOf(pawn.getColor())) {
+                        possiblePositions.add(pos);
                     }
                 }
             }
@@ -202,6 +196,62 @@ public class Board {
     }
 
     public boolean pawnCanMoveTo(Pawn pawn, Position position) {
+        if (pawn instanceof Scout) {
+            if (pawn.canMoveTo(position) && field[position.getY()][position.getX()]) {
+                List<Position> positions = getMovesForScout((Scout) pawn);
+                for (Position pos : positions
+                ) {
+                    if (pos.getX() == position.getX() && pos.getY() == position.getY()) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         return pawn.canMoveTo(position) && field[position.getY()][position.getX()];
+    }
+
+    private List<Position> getMovesForScout(Scout scout) {
+        Position position = scout.getPosition();
+        List<Position> possiblePositions = new ArrayList<>();
+
+        // To left
+        for (int x = position.getX() - 1; x >= 0; x--) {
+            Position tempPosition = new Position(x, position.getY());
+            if (checkPositionAndReturnBreak(tempPosition, possiblePositions)){
+                break;
+            }
+        }
+        // To right
+        for (int x = position.getX() + 1; x < 10; x++) {
+            Position tempPosition = new Position(x, position.getY());
+            if (checkPositionAndReturnBreak(tempPosition, possiblePositions)){
+                break;
+            }
+        }
+        // To up
+        for (int y = position.getY() - 1; y >= 0; y--) {
+            Position tempPosition = new Position(position.getX(), y);
+            if (checkPositionAndReturnBreak(tempPosition, possiblePositions)){
+                break;
+            }
+        }
+        // To down
+        for (int y = position.getY() + 1; y < 10; y++) {
+            Position tempPosition = new Position(position.getX(), y);
+            if (checkPositionAndReturnBreak(tempPosition, possiblePositions)){
+                break;
+            }
+        }
+        return possiblePositions;
+    }
+
+    private boolean checkPositionAndReturnBreak(Position position, List<Position> possiblePositions){
+        if (getPawnOnPosition(position) == null && field[position.getY()][position.getX()]) {
+            possiblePositions.add(position);
+        } else if (getPawnOnPosition(position) != null) {
+            possiblePositions.add(position);
+            return true;
+        } return !field[position.getY()][position.getX()];
     }
 }

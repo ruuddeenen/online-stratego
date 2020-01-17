@@ -2,11 +2,11 @@ package service.messages.outgoing.models;
 
 import models.Player;
 import service.messages.Operation;
-import service.messages.outgoing.interfaces.IPlayerListResponse;
+import service.messages.both.IPlayerList;
 
 import java.util.List;
 
-public class PlayerListResponse extends Response implements IPlayerListResponse {
+public class PlayerListResponse extends Response implements IPlayerList {
     private List<Player> playerList;
 
     public PlayerListResponse(Operation operation, String sender, String lobbyId, List<Player> playerList) {

@@ -1,11 +1,8 @@
 package models;
 
-import models.pawns.Flag;
-import models.pawns.Pawn;
 import models.enums.Color;
+import models.pawns.Pawn;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,11 +22,11 @@ public class Game {
         playerSet.add(player);
     }
 
-    public void addPawns(List<Pawn> pawnList, Color color) {
+    public void addPawns(List<Pawn> pawnList) {
         if (pawnList.size() != 40) {
             return;
         }
-        board.removePawns(color);
+        board.removePawns(pawnList.get(0).getColor());
         board.addToPawnList(pawnList);
     }
 

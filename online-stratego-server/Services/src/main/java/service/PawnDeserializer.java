@@ -1,7 +1,6 @@
 package service;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -12,7 +11,7 @@ import java.io.IOException;
 
 public class PawnDeserializer extends JsonDeserializer<Pawn> {
     @Override
-    public Pawn deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+    public Pawn deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
         ObjectCodec codec = jsonParser.getCodec();
         JsonNode pawn = codec.readTree(jsonParser);
 

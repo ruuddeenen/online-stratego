@@ -20,18 +20,4 @@ public class Position {
     public int getY() {
         return y;
     }
-
-    public void flipX() {
-        this.x = 10 - (x + 1);
-    }
-
-    public int flipY() {
-        this.y = 10 - (y + 1);
-        return y;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("(%d,%d)", x, y);
-    }
 }

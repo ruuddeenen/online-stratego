@@ -1,8 +1,10 @@
 package service.controllers.websocket;
 
-import models.*;
-import models.pawns.*;
-import models.enums.Color;
+import models.Board;
+import models.Game;
+import models.GameRepository;
+import models.Player;
+import models.pawns.Pawn;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -15,13 +17,16 @@ import service.messages.incoming.messages.Message;
 import service.messages.incoming.messages.MoveMessage;
 import service.messages.outgoing.models.*;
 
-import java.util.*;
+import java.util.List;
 
 @Controller
 public class GameController {
     private static String destination = "/topic/game";
     private static SimpMessageSendingOperations messagingTemplate;
     private GameRepository gameRepository = GameRepository.getInstance();
+
+    public GameController() {
+    }
 
     @Autowired
     public GameController(SimpMessageSendingOperations messagingTemplate) {
@@ -61,9 +66,8 @@ public class GameController {
                 });
             }
         } else {
-            messagingTemplate.convertAndSend(destination, new ErrorResponse("Not a valid move!"));
+            messagingTemplate.convertAndSend(destination, new ErrorResponse("Not a valid move!", message.getPlayer().getId()));
         }
-
     }
 
     @MessageMapping("/game/moves")
@@ -85,10 +89,9 @@ public class GameController {
             }
             return null;
         }
-        Response response = new ErrorResponse("Trying to move while not your turn.");
+        Response response = new ErrorResponse("Trying to move while not your turn.", message.getPlayer().getId());
         response.setOperation(Operation.NOT_YOUR_TURN);
         response.setLobbyId(message.getLobbyId());
-        response.setReceiver(message.getPlayer().getId());
         return response;
     }
 
@@ -98,11 +101,9 @@ public class GameController {
     public void readyUp(GameMessage message) {
         String lobbyId = message.getLobbyId();
         Game game = gameRepository.getGameById(lobbyId);
-        Player player = game.getPlayerById(message.getPlayer().getId());
-        Color color = player.getColor();
 
         List<Pawn> pawnList = message.getPawnList();
-        game.addPawns(pawnList, color);
+        game.addPawns(pawnList);
 
         if (game.isReady()) {
             for (Player p : game.getPlayerSet()
@@ -123,6 +124,13 @@ public class GameController {
     @MessageMapping("/game")
     @SendTo("/topic/game")
     public Response connect(Message message) {
+        if (message.getPlayer() == null){
+            return null;
+        }
+        if (message.getLobbyId() == null || message.getLobbyId().isBlank()){
+            return new ErrorResponse("LobbyId cannot be null or blank!", message.getPlayer().getId());
+        }
+
         String lobbyId = message.getLobbyId();
         Game game = gameRepository.getOrCreateGame(lobbyId);
 
@@ -138,7 +146,11 @@ public class GameController {
                 opponent = p;
             }
         }
-        assert player != null;
+        if (player == null){
+            return new ErrorResponse("Could not find user in lobby with id: " + message.getPlayer().getId(), message.getPlayer().getId());
+        } else if (opponent == null){
+            return new ErrorResponse("Could not find an opponent in this game.", message.getPlayer().getId());
+        }
         game.addPlayer(player);
 
         return new GameStartResponse(

@@ -2,14 +2,14 @@ package service.controllers.rest;
 
 import interfaces.IUserRepository;
 import org.springframework.web.bind.annotation.*;
-import repositories.UserRepository;
+import repositories.UserRepositoryMySQL;
 import responses.UserResponse;
 
 import javax.servlet.http.HttpServletResponse;
 
 @RestController
 public class UserManagementController {
-    private IUserRepository userRepository = new UserRepository();
+    private IUserRepository userRepository = new UserRepositoryMySQL();
 
     @GetMapping(value = "/register")
     public UserResponse register(@RequestParam(value = "username") String username, @RequestParam(value = "password") String password){

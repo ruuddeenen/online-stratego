@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import SockJS from "sockjs-client";
 import * as Stomp from "@stomp/stompjs";
-import { GameConnectMessage, ReadyUpMessage, GetAvailableMovesMessage, MoveMessage, ConnectMessage, Message, GameMessage, AvailableMovesMessage } from '../models/MessageModels';
+import { MoveMessage, Message, GameMessage, AvailableMovesMessage } from '../models/MessageModels';
 import Bomb from '../images/pawns/stratego-bomb.webp';
 import Captain from '../images/pawns/stratego-captain.webp';
 import Colonel from '../images/pawns/stratego-colonel.webp';
@@ -253,8 +253,6 @@ class Game extends Component {
             if (this.state.color === 'RED' && y > 5) { this.placeOrRemovePawn(x, y); }
             else if (this.state.color === 'BLUE' && y < 4) { this.placeOrRemovePawn(x, y); }
         } else {
-            console.log(this.getPawnOnPosition(x, y));
-
             const pawn = this.getPawnOnPosition(x, y);
             if (pawn === null || pawn.color === this.state.opponent.color) {
                 this.movePawn(x, y);
@@ -276,7 +274,7 @@ class Game extends Component {
                 username: this.state.user.username,
                 color: this.state.color
             },
-            this.state.lobb yId,
+            this.state.lobbyId,
             this.state.selectedPawn,
             { x: x, y: y }
         ));
@@ -412,7 +410,6 @@ class Game extends Component {
     }
 
     getPawnsLeftToPlace(pawnArray) {
-        console.log(pawnArray, 'pawnArray')
         const arr = [
             this.getPawnCountLeftToPlace(pawnArray, 'Flag'),
             this.getPawnCountLeftToPlace(pawnArray, 'Spy'),
@@ -503,12 +500,6 @@ class Game extends Component {
                             </div>
                         </div>
                     </div>
-                    <div id='right' className='col-sm'>
-                        <canvas id='canvasDefeatedPawns'
-                            width={canvasDimensions.width.small}
-                            height={canvasDimensions.height.medium}>
-                        </canvas>
-                    </div>
                 </div>
             </div >
         )
@@ -544,6 +535,7 @@ class Game extends Component {
     }
 
     createButtons = (pawnArray) => {
+        console.log(pawnArray, 'createButtons()');
         if (pawnArray.length === 0) {
             return;
         }

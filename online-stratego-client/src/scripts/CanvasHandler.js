@@ -46,7 +46,6 @@ export class CanvasHandler {
             cross: createImage(Cross),
             eye: createImage(Eye)
         };
-        console.log(this.images, 'images')
 
         function createImage(url) {
             let image = new Image();
@@ -93,7 +92,6 @@ export class CanvasHandler {
     }
 
     drawPawns(pawnArray, color) {
-        console.log(pawnArray, 'drawing pawns')
         this.clear(this.ctxPawns);
 
         for (let i = 0; i < pawnArray.length; i++) {
@@ -159,7 +157,6 @@ export class CanvasHandler {
     }
 
     drawOverlay(x, y, color) {
-        console.log(x, y, color);
         this.ctxOverlay.fillStyle = color;
         this.ctxOverlay.globalAlpha = 0.4;
         this.ctxOverlay.fillRect(

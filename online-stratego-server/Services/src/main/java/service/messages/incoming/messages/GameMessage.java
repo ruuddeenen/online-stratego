@@ -1,11 +1,11 @@
 package service.messages.incoming.messages;
 
 import models.pawns.Pawn;
-import service.messages.incoming.interfaces.IGameMessage;
+import service.messages.both.IPawnList;
 
 import java.util.List;
 
-public class GameMessage extends Message implements IGameMessage {
+public class GameMessage extends Message implements IPawnList {
     private List<Pawn> pawnList;
     @Override
     public List<Pawn> getPawnList() {
